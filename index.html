@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>君衡 · 红利价值组合看板</title>
+<link rel="stylesheet" href="styles.css">
+<script src="echarts.min.js"></script>
+<script src="portfolio_data.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1 id="title">红利价值组合看板</h1>
+    <span class="sub" id="subtitle"></span>
+  </div>
+  <div class="updated">更新 <b id="updated"></b></div>
+</header>
+
+<div id="signal" class="signal"></div>
+
+<section class="kpis" id="kpis"></section>
+
+<section class="card">
+  <div class="card-head"><h2>净值曲线 · 组合 vs 基准</h2><span class="hint">起始 2025-12-31 净值=1.00，全收益(后复权)口径</span></div>
+  <div id="navChart" class="chart-lg"></div>
+  <div id="ddChart" class="chart-sm"></div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>月度收益</h2></div>
+    <div id="monthChart" class="chart-md"></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>当前持仓</h2><span class="hint" id="holdAsof"></span></div>
+    <table class="tbl" id="holdings"></table>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>历史调仓</h2><span class="hint">每月最后一个交易日收盘换仓，次一交易日起计收益</span></div>
+  <div id="rebals" class="rebals"></div>
+</section>
+
+<footer id="foot"></footer>
+<script src="app.js"></script>
+</body>
+</html>
