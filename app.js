@@ -27,9 +27,10 @@ function renderHistory(){
   if(!el) return;
   el.innerHTML = hist.map((h,idx)=>{
     const badge = h.source==="rqalpha"?"<span class='tag rq'>rqalpha已实现</span>":"<span class='tag pv'>临时等权</span>";
-    const cells = (h.rows||[]).map(r=>`<span class="hcell">${r.name||r.code} <b>${(r.weight*100).toFixed(1)}%</b></span>`).join("");
+    const thin = h.thin?`<span class='tag warn'>⚠该月末仅 ${h.rows.length} 只</span>`:"";
+    const cells = (h.rows||[]).map(r=>`<span class="hcell">${r.name||r.code} <b>${(r.weight*100).toFixed(1)}%</b></span>`).join("")||"<span class='hcell'>空仓</span>";
     const cash = h.cash_w>0.005?`<span class="hcell cash">现金 ${(h.cash_w*100).toFixed(1)}%</span>`:"";
-    return `<details class="mrow"${idx===hist.length-1?" open":""}><summary>${h.month.slice(0,4)}-${h.month.slice(4)} · ${(h.rows||[]).length}只 ${badge} <i>${fdate(h.date)}</i></summary><div class="hrow">${cells}${cash}</div></details>`;
+    return `<details class="mrow"${idx===hist.length-1?" open":""}><summary>${h.month.slice(0,4)}-${h.month.slice(4)} · ${(h.rows||[]).length}只 ${badge}${thin} <i>${fdate(h.date)}</i></summary><div class="hrow">${cells}${cash}</div></details>`;
   }).join("");
 }
 
