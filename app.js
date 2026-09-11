@@ -14,11 +14,23 @@ function init(){
   renderMonthly();
   renderHoldings();
   renderRebals();
+  renderHistory();
+  const rq=(D.meta&&D.meta.rq)||{};
   $("foot").innerHTML =
-    "口径：全收益（后复权，分红再投资）· 整手数建仓· 数据源 tushare · " +
-    "起始 "+ (m.start_date||"") + " 净值1.00。"+
-    (D.metrics&&D.metrics.recon_max_err!=null?` 每日对账最大误差 ${(D.metrics.recon_max_err*1e4).toFixed(2)}bp。`:"")+
-    " 本看板仅供业绩展示，不构成投资建议。";
+    "口径：rqalpha 已实现成交(等权/成本/停牌) 至 "+(rq.last?fdate(rq.last):"—")+
+    (rq.covered?`，其后为临时市值等权、次月自动修正`:"")+
+    " · 全收益(分红再投资) · 数据源 rqalpha + tushare · 起始 "+(m.start_date||"")+" 净值1.00。 本看板仅供业绩展示，不构成投资建议。";
+}
+
+function renderHistory(){
+  const el=$("histWrap"); const hist=D.history||[];
+  if(!el) return;
+  el.innerHTML = hist.map((h,idx)=>{
+    const badge = h.source==="rqalpha"?"<span class='tag rq'>rqalpha已实现</span>":"<span class='tag pv'>临时等权</span>";
+    const cells = (h.rows||[]).map(r=>`<span class="hcell">${r.name||r.code} <b>${(r.weight*100).toFixed(1)}%</b></span>`).join("");
+    const cash = h.cash_w>0.005?`<span class="hcell cash">现金 ${(h.cash_w*100).toFixed(1)}%</span>`:"";
+    return `<details class="mrow"${idx===hist.length-1?" open":""}><summary>${h.month.slice(0,4)}-${h.month.slice(4)} · ${(h.rows||[]).length}只 ${badge} <i>${fdate(h.date)}</i></summary><div class="hrow">${cells}${cash}</div></details>`;
+  }).join("");
 }
 
 function renderKPI(){
