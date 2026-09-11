@@ -69,6 +69,18 @@ function renderNav(){
     series.push({name:b.name,type:"line",smooth:true,showSymbol:false,lineStyle:{width:1.2,type:"dashed",color:col},itemStyle:{color:col},data:b.values});
     leg.push(b.name);
   }
+  const rq=(D.meta&&D.meta.rq)||{};
+  if(rq.covered){
+    const bdate=fdate(rq.last);
+    const provDays=(D.nav.stages||[]).filter(s=>s==="provisional").length;
+    series[0].markArea={silent:true,itemStyle:{color:"rgba(230,181,102,.08)"},
+      data:[[{xAxis:bdate},{xAxis:"max"}]]};
+    series[0].markLine={silent:true,symbol:"none",lineStyle:{color:"#e6b566",type:"dashed"},
+      label:{formatter:"rqalpha 已实现 → 临时等权",color:"#e6b566",fontSize:11},
+      data:[{xAxis:bdate}]};
+    const h=document.querySelector("#navHint");
+    if(h) h.textContent=`2025-12-31 起：${rq.first.slice(0,4)}-${rq.first.slice(4,6)}~${rq.last.slice(0,4)}-${rq.last.slice(4,6)} 为 rqalpha 已实现成交(${rq.n_days}日)，其后至${fdate(D.nav.dates[D.nav.dates.length-1])} 为临时市值等权(${provDays}日)，待次月 rqalpha 刷新后自动修正`;
+  }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
   ch.setOption({
     backgroundColor:"transparent",
