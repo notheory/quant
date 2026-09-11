@@ -55,5 +55,6 @@ h1{margin:0;font-size:20px;letter-spacing:.5px}
 .tag{font-size:11px;padding:1px 7px;border-radius:20px;margin-left:6px;vertical-align:middle}
 .tag.rq{background:rgba(63,178,127,.16);color:#3fb27f}
 .tag.pv{background:rgba(230,181,102,.16);color:var(--gold)}
+.tag.warn{background:rgba(240,119,109,.16);color:#f0776d}
 footer{color:var(--mut);font-size:12px;padding:18px 28px 30px;border-top:1px solid var(--line);margin-top:20px}
 a{color:var(--accent)}
