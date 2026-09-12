@@ -166,6 +166,13 @@ function renderHoldings(){
       `<td class="num">${r.dv||""}</td><td class="num">${r.pe||""}</td><td class="num">${(r.weight*100).toFixed(1)}%</td>`+
       `<td class="num">${sgn((r.ret||0)*100)}</td><td class="num">${sgn(r.contrib||0)}</td></tr>`;});
   if(h.cash_w!=null) html+=`<tr class="cash"><td>—</td><td>现金</td><td></td><td></td><td></td><td class="num">${(h.cash_w*100).toFixed(1)}%</td><td></td><td></td></tr>`;
+  // 组合汇总：股息率/PE 按权重加权(不含现金)，本月涨跌/净值贡献=各股贡献合计(≈组合区间收益)
+  let swdv=0, swpe=0, scontrib=0;
+  rows.forEach(r=>{ const w=r.weight||0, dv=parseFloat(r.dv), pe=parseFloat(r.pe);
+    if(!isNaN(dv)) swdv+=w*dv; if(!isNaN(pe)) swpe+=w*pe; scontrib+=(r.contrib||0); });
+  const eqw=rows.reduce((a,r)=>a+(r.weight||0),0)||1;
+  html+=`<tr class="sumrow"><td>—</td><td><b>组合合计</b></td><td></td><td class="num">${(swdv/eqw).toFixed(2)}</td><td class="num">${(swpe/eqw).toFixed(2)}</td>`+
+    `<td class="num">100.0%</td><td class="num">${sgn(scontrib)}</td><td class="num">${sgn(scontrib)}</td></tr>`;
   $("holdings").innerHTML=html;
 }
 
