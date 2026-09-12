@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大麦红利价值</title>
-<link rel="stylesheet" href="styles.css?v=2026-09-12-1319">
+<link rel="stylesheet" href="styles.css?v=2026-09-12-2353">
 <script src="echarts.min.js"></script>
-<script src="portfolio_data.js?v=2026-09-12-1319"></script>
+<script src="portfolio_data.js?v=2026-09-12-2353"></script>
 </head>
 <body>
 <header>
@@ -22,7 +22,12 @@
 <section class="kpis" id="kpis"></section>
 
 <section class="card">
-  <div class="card-head"><h2>净值曲线 · 组合 vs 基准</h2><span class="hint" id="navHint">起始 2025-12-31 净值=1.00，全收益(后复权)口径</span></div>
+  <div class="card-head"><h2>运行情况</h2><span class="hint">数据驱动的近期运作小结（自动生成，随每日更新刷新）</span></div>
+  <div id="reportBox" class="expo-sum"></div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>净值曲线 · 组合 vs 基准</h2><span class="hint" id="navHint">全收益(后复权)口径</span></div>
   <div id="navChart" class="chart-lg"></div>
   <div id="ddChart" class="chart-sm"></div>
 </section>
@@ -59,6 +64,6 @@
 </section>
 
 <footer id="foot"></footer>
-<script src="app.js?v=2026-09-12-1319"></script>
+<script src="app.js?v=2026-09-12-2353"></script>
 </body>
 </html>
