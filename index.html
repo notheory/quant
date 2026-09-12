@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大麦红利价值</title>
-<link rel="stylesheet" href="styles.css?v=2026-09-12-1122">
+<link rel="stylesheet" href="styles.css?v=2026-09-12-1141">
 <script src="echarts.min.js"></script>
-<script src="portfolio_data.js?v=2026-09-12-1122"></script>
+<script src="portfolio_data.js?v=2026-09-12-1141"></script>
 </head>
 <body>
 <header>
@@ -48,7 +48,16 @@
   <div id="histWrap" class="hist"></div>
 </section>
 
+<section class="card" id="expoCard" style="display:none">
+  <div class="card-head"><h2>因子暴露</h2><span class="hint" id="expoHint">组合持仓在各因子上的全市场 z-score 加权暴露（正=超配该因子方向）</span></div>
+  <div class="grid-2">
+    <div><div id="expoRadar" class="chart-md"></div></div>
+    <div><div id="expoHist" class="chart-md"></div></div>
+  </div>
+  <div id="expoBars" class="chart-lg" style="margin-top:8px"></div>
+</section>
+
 <footer id="foot"></footer>
-<script src="app.js?v=2026-09-12-1122"></script>
+<script src="app.js?v=2026-09-12-1141"></script>
 </body>
 </html>
