@@ -83,16 +83,23 @@ function renderNav(){
     leg.push(b.name);
   }
   const rq=(D.meta&&D.meta.rq)||{};
-  if(rq.covered){
-    const bdate=fdate(rq.last);
-    const provDays=(D.nav.stages||[]).filter(s=>s==="provisional").length;
+  const stg=D.nav.stages||[];
+  const provStartIdx=stg.findIndex(s=>s==="provisional");
+  if(provStartIdx>=0){
+    const bdate=D.nav.dates[provStartIdx];
     series[0].markArea={silent:true,itemStyle:{color:"rgba(230,181,102,.08)"},
-      data:[[{xAxis:bdate},{xAxis:"max"}]]};
+      data:[[{xAxis:fdate(bdate)},{xAxis:"max"}]]};
     series[0].markLine={silent:true,symbol:"none",lineStyle:{color:"#e6b566",type:"dashed"},
       label:{formatter:"rqalpha 已实现 → 临时等权",color:"#e6b566",fontSize:11},
-      data:[{xAxis:bdate}]};
-    const h=document.querySelector("#navHint");
-    if(h) h.textContent=`2025-12-31 起：${rq.first.slice(0,4)}-${rq.first.slice(4,6)}~${rq.last.slice(0,4)}-${rq.last.slice(4,6)} 为 rqalpha 已实现成交(${rq.n_days}日)，其后至${fdate(D.nav.dates[D.nav.dates.length-1])} 为临时市值等权(${provDays}日)，待次月 rqalpha 刷新后自动修正`;
+      data:[{xAxis:fdate(bdate)}]};
+  }
+  const h=document.querySelector("#navHint");
+  if(h){
+    if(rq.covered && provStartIdx<0){
+      h.textContent=`全程 rqalpha 回测真实成交(${rq.n_days}日，含真实现金余额)·全收益`;
+    }else if(rq.covered){
+      h.textContent=`rqalpha 已实现至 ${fdate((D.nav.dates[provStartIdx-1]||rq.last))}，其后为临时等权(待次月rqalpha修正)`;
+    }else{ h.textContent="全收益(后复权，分红再投资)口径"; }
   }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
   ch.setOption({
