@@ -15,6 +15,7 @@ function init(){
   renderHoldings();
   renderRebals();
   renderHistory();
+  renderExposure();
   const rq=(D.meta&&D.meta.rq)||{};
   $("foot").innerHTML =
     "口径：rqalpha 已实现成交(等权/成本/停牌) 至 "+(rq.last?fdate(rq.last):"—")+
@@ -179,5 +180,48 @@ function renderHoldings(){
 function renderRebals(){
   const rb=D.rebalances||[];
   $("rebals").innerHTML=rb.map(x=>`<div class="rebal">生效 <b>${fdate(x.effective)}</b> · ${x.n} 只</div>`).join("")||"<span class='hint'>暂无调仓记录</span>";
+}
+
+function renderExposure(){
+  const e=D.exposure; if(!e){ return; }
+  $("expoCard").style.display="";
+  $("expoHint").textContent=`as-of ${fdate(e.asof)} · 全市场z加权(正=超配该方向) · 历史 ${e.history.length} 期`;
+  const gNames=e.groups||Object.keys(e.current_group||{});
+  // 雷达：风格组 原始 vs 行业中性
+  const radar=echarts.init($("expoRadar"),null,{renderer:"canvas"});
+  radar.setOption({backgroundColor:"transparent",
+    title:{text:"风格暴露(雷达)",left:"center",textStyle:{color:"#8b949e",fontSize:13}},
+    legend:{bottom:0,textStyle:{color:"#8b949e"},data:["原始","行业中性"]},
+    tooltip:{backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
+    radar:{indicator:gNames.map(g=>({name:g,max:1.5,min:-1.5})),axisName:{color:"#8b949e",fontSize:11},
+      splitLine:{lineStyle:{color:"#233041"}},splitArea:{show:false},axisLine:{lineStyle:{color:"#233041"}}},
+    series:[{type:"radar",data:[
+      {name:"原始",value:gNames.map(g=>(e.current_group||{})[g]??0),lineStyle:{color:"#4ea1ff"},itemStyle:{color:"#4ea1ff"},areaStyle:{color:"rgba(78,161,255,.15)"}},
+      {name:"行业中性",value:gNames.map(g=>(e.current_group_neutral||{})[g]??0),lineStyle:{color:"#e6b566"},itemStyle:{color:"#e6b566"}}]}]});
+  // 历史折线：各组暴露随时间
+  const hist=echarts.init($("expoHist"),null,{renderer:"canvas"});
+  const hd=(e.history||[]).map(h=>fdate(h.date));
+  hist.setOption({backgroundColor:"transparent",
+    title:{text:"风格暴露趋势",left:"center",textStyle:{color:"#8b949e",fontSize:13}},
+    legend:{bottom:0,type:"scroll",textStyle:{color:"#8b949e"},data:gNames},
+    tooltip:{trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
+    grid:{left:40,right:16,top:36,bottom:44},
+    xAxis:{type:"category",data:hd,axisLabel:{color:"#8b949e"},axisLine:{lineStyle:{color:"#2a3340"}}},
+    yAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
+    series:gNames.map(g=>({name:g,type:"line",smooth:true,showSymbol:false,
+      data:(e.history||[]).map(h=>h.group?h.group[g]:null)}))});
+  // 因子柱：18因子 原始/中性，按原始降序
+  const bars=echarts.init($("expoBars"),null,{renderer:"canvas"});
+  const fs=[...(e.current||[])].sort((a,b)=>(a.raw??-9)-(b.raw??-9));
+  bars.setOption({backgroundColor:"transparent",
+    title:{text:"单因子暴露",left:"center",textStyle:{color:"#8b949e",fontSize:13}},
+    legend:{top:2,right:0,textStyle:{color:"#8b949e"},data:["原始","行业中性"]},
+    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
+    grid:{left:80,right:16,top:30,bottom:24},
+    xAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
+    yAxis:{type:"category",data:fs.map(x=>x.name),axisLabel:{color:"#8b949e",fontSize:11},axisLine:{lineStyle:{color:"#2a3340"}}},
+    series:[{name:"原始",type:"bar",data:fs.map(x=>x.raw),itemStyle:{color:"#4ea1ff"},barGap:0},
+            {name:"行业中性",type:"bar",data:fs.map(x=>x.neutral),itemStyle:{color:"#e6b566"}}]});
+  window.addEventListener("resize",()=>{radar.resize();hist.resize();bars.resize();});
 }
 init();
