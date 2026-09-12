@@ -9,6 +9,7 @@ function init(){
   $("subtitle").textContent = "· 低频价值策略 · 月末调仓 · 等权";
   $("updated").textContent = m.updated_at||"—";
   renderKPI();
+  renderReport();
   renderSignal();
   renderNav();
   renderMonthly();
@@ -49,6 +50,12 @@ function renderKPI(){
   ];
   $("kpis").innerHTML = cards.map(c=>
     `<div class="kpi"><div class="k">${c[0]}</div><div class="v ${c[2]}">${c[1]}</div></div>`).join("");
+}
+
+function renderReport(){
+  const rep=D.report||{}; const el=$("reportBox"); if(!el) return;
+  const lines=(rep.text||"").split("\n").filter(Boolean);
+  el.innerHTML = lines.length? lines.map(l=>`<div>${l}</div>`).join("") : "暂无运行情况数据。";
 }
 
 function renderSignal(){
