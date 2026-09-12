@@ -142,16 +142,34 @@ function renderNav(){
 }
 
 function renderMonthly(){
-  const rows=(D.monthly||[]).filter(x=>x.month>D.meta.start_date.slice(0,6));
+  const rows=(D.monthly||[]).filter(x=>x.month>=D.meta.start_date.slice(0,6));
   const labels=rows.map(x=>`${x.month.slice(0,4)}-${x.month.slice(4)}`);
-  const vals=rows.map(x=>+(x.ret*100).toFixed(2));
+  const benches=D.meta.benchmarks||{};
+  const pct=a=>a.map(v=>v==null?null:+(v*100).toFixed(2));
+  const series=[{name:"组合",type:"bar",data:pct(rows.map(x=>x.ret)),
+                 itemStyle:{color:p=> (p.value>=0?"#f0776d":"#3fb27f")},barWidth:"22%"}];
+  const bcol={"000300.SH":"#8b949e","000922.CSI":"#e6b566"};
+  const ecol={"000300.SH":"#4ea1ff","000922.CSI":"#c084fc"};
+  const legend=["组合"];
+  for(const c in benches){
+    series.push({name:benches[c],type:"bar",data:pct(rows.map(x=>x["b_"+c])),
+                 itemStyle:{color:bcol[c]||"#8b949e"},barWidth:"22%"});
+    legend.push(benches[c]);
+  }
+  for(const c in benches){
+    series.push({name:"超额vs"+benches[c],type:"line",smooth:true,showSymbol:true,symbolSize:6,
+                 lineStyle:{width:2,type:"dashed",color:ecol[c]||"#4ea1ff"},itemStyle:{color:ecol[c]||"#4ea1ff"},
+                 data:pct(rows.map(x=>x["ex_"+c]))});
+    legend.push("超额vs"+benches[c]);
+  }
   const ch=echarts.init($("monthChart"),null,{renderer:"canvas"});
   ch.setOption({backgroundColor:"transparent",
-    grid:{left:44,right:16,top:16,bottom:28},
-    tooltip:{trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},valueFormatter:v=>v+"%"},
+    legend:{top:0,left:0,textStyle:{color:"#8b949e",fontSize:11},data:legend,type:"scroll"},
+    grid:{left:44,right:16,top:40,bottom:28},
+    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},valueFormatter:v=>(v==null?"—":v+"%")},
     xAxis:{type:"category",data:labels,axisLabel:{color:"#8b949e",rotate:30},axisLine:{lineStyle:{color:"#2a3340"}}},
     yAxis:{type:"value",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e",formatter:"{value}%"}},
-    series:[{type:"bar",data:vals.map(v=>({value:v,itemStyle:{color:v>=0?"#f0776d":"#3fb27f"}})),barWidth:"55%"}]});
+    series});
   window.addEventListener("resize",()=>ch.resize());
 }
 
@@ -186,6 +204,7 @@ function renderExposure(){
   const e=D.exposure; if(!e){ return; }
   const BN=e.bench_name||"基准";
   $("expoCard").style.display="";
+  const sum=$("expoSummary"); if(sum) sum.textContent=e.summary||"";
   $("expoHint").textContent=`as-of ${fdate(e.asof)} · 组合全市场z暴露，并与${BN}对比(主动=组合−${BN}) · 历史 ${e.history.length} 期`;
   const gNames=e.groups||Object.keys(e.current_group||{});
   // 雷达：风格组 组合 vs 基准
