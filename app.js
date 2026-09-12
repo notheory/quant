@@ -6,7 +6,7 @@ const cls = x => x>=0?"up":"down";
 
 function init(){
   const m = D.meta||{};
-  $("subtitle").textContent = "· " + (m.combo||"") + " 组合 · 低频调仓（月末）";
+  $("subtitle").textContent = "· 低频价值策略 · 月末调仓 · 等权";
   $("updated").textContent = m.updated_at||"—";
   renderKPI();
   renderSignal();
