@@ -102,10 +102,25 @@ function renderNav(){
     }else{ h.textContent="全收益(后复权，分红再投资)口径"; }
   }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
+  const NAV=D.nav.nav||[];
+  const navTip={trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},
+    formatter:(ps)=>{
+      if(!ps||!ps.length) return "";
+      const i=ps[0].dataIndex;
+      const day= i>0 && NAV[i-1] ? (NAV[i]/NAV[i-1]-1)*100 : 0;
+      const cum=(NAV[i]-( (D.meta&&D.meta.initial_nav)||1 ))*100;
+      const ddv=(D.nav.drawdown&&D.nav.drawdown[i]!=null)?D.nav.drawdown[i]*100:0;
+      const ccol=day>=0?"#f0776d":"#3fb27f";
+      let out=`<div style="font-weight:600;margin-bottom:4px">${ps[0].axisValue}</div>`;
+      out+=`组合净值 <b>${NAV[i].toFixed(4)}</b> <span style="color:${ccol}">当日 ${day>=0?"+":""}${day.toFixed(2)}%</span><br/>`;
+      out+=`累计收益 <span style="color:${cum>=0?"#f0776d":"#3fb27f"}">${cum>=0?"+":""}${cum.toFixed(2)}%</span>　当前回撤 ${ddv.toFixed(2)}%<br/>`;
+      ps.forEach(p=>{ if(p.seriesName!=="组合净值"&&p.value!=null) out+=`${p.marker}${p.seriesName} ${(+p.value).toFixed(4)}<br/>`;});
+      return out;
+    }};
   ch.setOption({
     backgroundColor:"transparent",
     legend:{data:leg,textStyle:{color:"#8b949e"},top:0,right:0},
-    tooltip:{trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
+    tooltip:navTip,
     grid:{left:48,right:20,top:30,bottom:50},
     xAxis:{type:"category",data:dates,axisLine:{lineStyle:{color:"#2a3340"}},axisLabel:{color:"#8b949e"}},
     yAxis:{type:"value",scale:true,splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
@@ -141,12 +156,16 @@ function renderMonthly(){
 
 function renderHoldings(){
   const h=D.holdings||{};
-  $("holdAsof").textContent = h.asof? ("定价日 "+fdate(h.asof)): "";
+  const src=h.source==="rqalpha"?"rqalpha 已实现":"临时等权";
+  $("holdAsof").textContent = (h.asof?("定价日 "+fdate(h.asof)+" · "+src):"")+"  本月涨跌=自本期起点全收益，净值贡献=期初权重×涨幅";
   const rows=h.rows||[];
-  let html="<tr><th>代码</th><th>名称</th><th>行业</th><th>股息率</th><th>PE</th><th>权重</th></tr>";
-  rows.forEach(r=>{html+=`<tr><td class="num">${r.code}</td><td>${r.name||""}</td><td>${r.industry||""}</td>`+
-    `<td class="num">${r.dv||""}</td><td class="num">${r.pe||""}</td><td class="num">${(r.weight*100).toFixed(1)}%</td></tr>`;});
-  if(h.cash_w!=null) html+=`<tr class="cash"><td>—</td><td>现金</td><td></td><td></td><td></td><td class="num">${(h.cash_w*100).toFixed(1)}%</td></tr>`;
+  const sgn=v=>v>=0?`<span style="color:#f0776d">+${v.toFixed(2)}</span>`:`<span style="color:#3fb27f">${v.toFixed(2)}</span>`;
+  let html="<tr><th>代码</th><th>名称</th><th>行业</th><th>股息率%</th><th>PE</th><th>权重</th><th>本月涨跌%</th><th>净值贡献pp</th></tr>";
+  rows.forEach(r=>{
+    html+=`<tr><td class="num">${r.code}</td><td>${r.name||""}</td><td>${r.industry||""}</td>`+
+      `<td class="num">${r.dv||""}</td><td class="num">${r.pe||""}</td><td class="num">${(r.weight*100).toFixed(1)}%</td>`+
+      `<td class="num">${sgn((r.ret||0)*100)}</td><td class="num">${sgn(r.contrib||0)}</td></tr>`;});
+  if(h.cash_w!=null) html+=`<tr class="cash"><td>—</td><td>现金</td><td></td><td></td><td></td><td class="num">${(h.cash_w*100).toFixed(1)}%</td><td></td><td></td></tr>`;
   $("holdings").innerHTML=html;
 }
 
