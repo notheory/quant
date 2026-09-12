@@ -184,20 +184,21 @@ function renderRebals(){
 
 function renderExposure(){
   const e=D.exposure; if(!e){ return; }
+  const BN=e.bench_name||"基准";
   $("expoCard").style.display="";
-  $("expoHint").textContent=`as-of ${fdate(e.asof)} · 全市场z加权(正=超配该方向) · 历史 ${e.history.length} 期`;
+  $("expoHint").textContent=`as-of ${fdate(e.asof)} · 组合全市场z暴露，并与${BN}对比(主动=组合−${BN}) · 历史 ${e.history.length} 期`;
   const gNames=e.groups||Object.keys(e.current_group||{});
-  // 雷达：风格组 原始 vs 行业中性
+  // 雷达：风格组 组合 vs 基准
   const radar=echarts.init($("expoRadar"),null,{renderer:"canvas"});
   radar.setOption({backgroundColor:"transparent",
-    title:{text:"风格暴露(雷达)",left:"center",textStyle:{color:"#8b949e",fontSize:13}},
-    legend:{bottom:0,textStyle:{color:"#8b949e"},data:["原始","行业中性"]},
+    title:{text:`风格暴露 组合 vs ${BN}`,left:"center",textStyle:{color:"#8b949e",fontSize:13}},
+    legend:{bottom:0,textStyle:{color:"#8b949e"},data:["组合",BN]},
     tooltip:{backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
-    radar:{indicator:gNames.map(g=>({name:g,max:1.5,min:-1.5})),axisName:{color:"#8b949e",fontSize:11},
+    radar:{indicator:gNames.map(g=>({name:g,max:1.8,min:-1.8})),axisName:{color:"#8b949e",fontSize:11},
       splitLine:{lineStyle:{color:"#233041"}},splitArea:{show:false},axisLine:{lineStyle:{color:"#233041"}}},
     series:[{type:"radar",data:[
-      {name:"原始",value:gNames.map(g=>(e.current_group||{})[g]??0),lineStyle:{color:"#4ea1ff"},itemStyle:{color:"#4ea1ff"},areaStyle:{color:"rgba(78,161,255,.15)"}},
-      {name:"行业中性",value:gNames.map(g=>(e.current_group_neutral||{})[g]??0),lineStyle:{color:"#e6b566"},itemStyle:{color:"#e6b566"}}]}]});
+      {name:"组合",value:gNames.map(g=>(e.current_group||{})[g]??0),lineStyle:{color:"#4ea1ff"},itemStyle:{color:"#4ea1ff"},areaStyle:{color:"rgba(78,161,255,.15)"}},
+      {name:BN,value:gNames.map(g=>(e.bench_group||{})[g]??0),lineStyle:{color:"#e6b566"},itemStyle:{color:"#e6b566"}}]}]});
   // 历史折线：各组暴露随时间
   const hist=echarts.init($("expoHist"),null,{renderer:"canvas"});
   const hd=(e.history||[]).map(h=>fdate(h.date));
@@ -210,18 +211,18 @@ function renderExposure(){
     yAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
     series:gNames.map(g=>({name:g,type:"line",smooth:true,showSymbol:false,
       data:(e.history||[]).map(h=>h.group?h.group[g]:null)}))});
-  // 因子柱：18因子 原始/中性，按原始降序
+  // 因子柱：18因子 组合暴露 + 主动(−基准)，按主动绝对值降序
   const bars=echarts.init($("expoBars"),null,{renderer:"canvas"});
-  const fs=[...(e.current||[])].sort((a,b)=>(a.raw??-9)-(b.raw??-9));
+  const fs=[...(e.current||[])].sort((a,b)=>Math.abs(b.active??0)-Math.abs(a.active??0));
   bars.setOption({backgroundColor:"transparent",
-    title:{text:"单因子暴露",left:"center",textStyle:{color:"#8b949e",fontSize:13}},
-    legend:{top:2,right:0,textStyle:{color:"#8b949e"},data:["原始","行业中性"]},
+    title:{text:`单因子暴露 与 主动(vs ${BN})`,left:"center",textStyle:{color:"#8b949e",fontSize:13}},
+    legend:{top:2,right:0,textStyle:{color:"#8b949e"},data:["组合",`主动(−${BN})`]},
     tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
     grid:{left:80,right:16,top:30,bottom:24},
     xAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
     yAxis:{type:"category",data:fs.map(x=>x.name),axisLabel:{color:"#8b949e",fontSize:11},axisLine:{lineStyle:{color:"#2a3340"}}},
-    series:[{name:"原始",type:"bar",data:fs.map(x=>x.raw),itemStyle:{color:"#4ea1ff"},barGap:0},
-            {name:"行业中性",type:"bar",data:fs.map(x=>x.neutral),itemStyle:{color:"#e6b566"}}]});
+    series:[{name:"组合",type:"bar",data:fs.map(x=>x.raw),itemStyle:{color:"#4ea1ff"},barGap:0},
+            {name:`主动(−${BN})`,type:"bar",data:fs.map(x=>x.active??null),itemStyle:{color:"#f0776d"}}]});
   window.addEventListener("resize",()=>{radar.resize();hist.resize();bars.resize();});
 }
 init();
