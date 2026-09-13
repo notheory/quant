@@ -51,6 +51,9 @@ h1{margin:0;font-size:20px;letter-spacing:.5px}
 .mrow[open] summary{border-bottom:1px solid var(--line);margin-bottom:8px}
 .expo-sum{background:rgba(78,161,255,.07);border-left:3px solid var(--accent);border-radius:6px;
   padding:12px 16px;margin:2px 0 14px;font-size:14px;line-height:1.9;color:var(--txt)}
+.expo-sum b{color:#fff}
+.expo-sum .up{color:var(--up)}.expo-sum .down{color:var(--down)}
+.expo-sum .ai{color:var(--mut);font-size:12px;opacity:.9}
 .hrow{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 10px}
 .hcell{background:#12171e;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--mut)}
 .hcell b{color:var(--txt);margin-left:4px}
