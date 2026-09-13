@@ -19,10 +19,10 @@ h1{margin:0;font-size:20px;letter-spacing:.5px}
 .chip{display:inline-block;padding:2px 8px;border-radius:6px;margin:2px 4px 2px 0;font-size:12px}
 .chip.add{background:rgba(240,119,109,.15);color:var(--up)}
 .chip.del{background:rgba(63,178,127,.15);color:var(--down)}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 28px 0}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:16px 28px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
 .kpi .k{color:var(--mut);font-size:12px}
-.kpi .v{font-size:24px;font-weight:600;margin-top:6px}
+.kpi .v{font-size:21px;font-weight:600;margin-top:6px}
 .kpi .v.up{color:var(--up)}.kpi .v.down{color:var(--down)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
   margin:16px 28px;padding:16px 18px}
