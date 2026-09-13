@@ -6,7 +6,7 @@ const cls = x => x>=0?"up":"down";
 
 function init(){
   const m = D.meta||{};
-  $("subtitle").textContent = "· 低频价值策略 · 月末调仓 · 等权";
+  $("subtitle").textContent = "· 净值起点 " + fdate(m.start_date||"") + " = 1.0000（实盘1:1跟踪起始）· 低频月末调仓 · 市值等权 · 全收益(含分红再投)";
   $("updated").textContent = m.updated_at||"—";
   renderKPI();
   renderReport();
@@ -41,12 +41,20 @@ function renderKPI(){
   const last=s[s.length-1], prev=s[s.length-2];
   const dayRet = prev? last/prev-1 : 0;
   const since = last? last-1 : 0;
+  const bm=D.benchmarks||{};
+  const bEnd = c=>{const a=(bm[c]&&bm[c].values)||[];for(let i=a.length-1;i>=0;i--){if(a[i]!=null)return a[i];}return null;};
+  const exHS = (last&&bEnd("000922.CSI"))? last/bEnd("000922.CSI")-1 : null;
+  const ex300= (last&&bEnd("000300.SH"))? last/bEnd("000300.SH")-1 : null;
   const cards=[
     ["最新净值", last?last.toFixed(4):"—", ""],
     ["当日收益", pct(dayRet), cls(dayRet)],
     ["累计收益", pct(since), cls(since)],
     ["年化收益", pct(mt.ann_return), cls(mt.ann_return||0)],
+    ["年化波动", pct(mt.ann_vol), ""],
+    ["夏普比率", mt.sharpe!=null?mt.sharpe.toFixed(2):"—", (mt.sharpe||0)>=1?"up":""],
     ["最大回撤", pct(mt.max_drawdown), "down"],
+    ["超额·中证红利", exHS==null?"—":pct(exHS), cls(exHS||0)],
+    ["超额·沪深300", ex300==null?"—":pct(ex300), cls(ex300||0)],
   ];
   $("kpis").innerHTML = cards.map(c=>
     `<div class="kpi"><div class="k">${c[0]}</div><div class="v ${c[2]}">${c[1]}</div></div>`).join("");
