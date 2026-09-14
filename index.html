@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大麦红利价值</title>
-<link rel="stylesheet" href="styles.css?v=2026-09-14-2307">
+<link rel="stylesheet" href="styles.css?v=2026-09-14-2326">
 <script src="echarts.min.js"></script>
-<script src="portfolio_data.js?v=2026-09-14-2307"></script>
+<script src="portfolio_data.js?v=2026-09-14-2326"></script>
 </head>
 <body>
 <header>
@@ -43,9 +43,9 @@
   </section>
 </div>
 
-<section class="card">
-  <div class="card-head"><h2>历史调仓</h2><span class="hint">每月最后一个交易日收盘换仓，次一交易日起计收益</span></div>
-  <div id="rebals" class="rebals"></div>
+<section class="card" id="eventsCard" style="display:none">
+  <div class="card-head"><h2>近期重要事项</h2><span class="hint" id="eventsHint">当前持仓近3月已发生 / 未来1月将至：分红、业绩预告·快报·披露</span></div>
+  <div id="eventsBox" class="evts"></div>
 </section>
 
 <section class="card">
@@ -64,6 +64,6 @@
 </section>
 
 <footer id="foot"></footer>
-<script src="app.js?v=2026-09-14-2307"></script>
+<script src="app.js?v=2026-09-14-2326"></script>
 </body>
 </html>
