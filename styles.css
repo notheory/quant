@@ -75,5 +75,9 @@ h1{margin:0;font-size:20px;letter-spacing:.5px}
 .evt .es{font-size:11px;color:var(--mut)}
 .evt .en{font-weight:600;color:var(--txt)}
 .evt .et{color:#c7d1dc}
+.evmore{margin-top:4px}
+.evmore summary{cursor:pointer;font-size:12px;color:var(--accent);list-style:none;padding:2px 0}
+.evmore summary::-webkit-details-marker{display:none}
+.evmore[open] summary{margin-bottom:6px;color:var(--mut)}
 footer{color:var(--mut);font-size:12px;padding:18px 28px 30px;border-top:1px solid var(--line);margin-top:20px}
 a{color:var(--accent)}
