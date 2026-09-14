@@ -14,8 +14,8 @@ function init(){
   renderNav();
   renderMonthly();
   renderHoldings();
-  renderRebals();
   renderHistory();
+  renderEvents();
   renderExposure();
   const rq=(D.meta&&D.meta.rq)||{};
   $("foot").innerHTML =
@@ -225,6 +225,26 @@ function renderHoldings(){
 function renderRebals(){
   const rb=D.rebalances||[];
   $("rebals").innerHTML=rb.map(x=>`<div class="rebal">生效 <b>${fdate(x.effective)}</b> · ${x.n} 只</div>`).join("")||"<span class='hint'>暂无调仓记录</span>";
+}
+
+function renderEvents(){
+  const ev=D.events||{}; const box=$("eventsBox"); if(!box) return;
+  const items=ev.items||[]; if(!items.length){ return; }
+  $("eventsCard").style.display="";
+  const asof=ev.asof||"";
+  const up=items.filter(x=>x.date>asof);      // 未来1月将至
+  const past=items.filter(x=>x.date<=asof).slice().reverse();  // 近3月已发生(新在前)
+  const row=x=>{
+    const todo=x.status && x.status.indexOf("待")>=0 || x.status==="预案";
+    return `<div class="evt${todo?' todo':''}"><span class="ed">${fdate(x.date)}</span>`+
+      `<span class="ek ${x.kind==='分红'?'div':'res'}">${x.kind}</span>`+
+      `<span class="es">${x.status}</span><span class="en">${x.name}</span>`+
+      `<span class="et">${x.text}</span></div>`;
+  };
+  let html="";
+  html+= up.length? ("<div class='egrid'><div class='eh'>即将发生（未来1个月）</div>"+up.map(row).join("")+"</div>"):"";
+  html+= past.length? ("<div class='egrid'><div class='eh'>已发生（近3个月）</div>"+past.map(row).join("")+"</div>"):"";
+  box.innerHTML=html;
 }
 
 function renderExposure(){
