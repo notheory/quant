@@ -243,7 +243,11 @@ function renderEvents(){
   };
   let html="";
   html+= up.length? ("<div class='egrid'><div class='eh'>即将发生（未来1个月）</div>"+up.map(row).join("")+"</div>"):"";
-  html+= past.length? ("<div class='egrid'><div class='eh'>已发生（近3个月）</div>"+past.map(row).join("")+"</div>"):"";
+  if(past.length){
+    html+=`<div class='egrid'><div class='eh'>已发生（近3个月）</div>${row(past[0])}`;
+    if(past.length>1) html+=`<details class='evmore'><summary>展开更早 ${past.length-1} 条</summary>${past.slice(1).map(row).join("")}</details>`;
+    html+=`</div>`;
+  }
   box.innerHTML=html;
 }
 
