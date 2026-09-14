@@ -25,14 +25,17 @@ function init(){
 }
 
 function renderHistory(){
-  const el=$("histWrap"); const hist=D.history||[];
+  const el=$("histWrap"); let hist=[...(D.history||[])];
   if(!el) return;
+  hist.sort((a,b)=>b.month.localeCompare(a.month));   // 最新月份在前
   el.innerHTML = hist.map((h,idx)=>{
-    const badge = h.source==="rqalpha"?"<span class='tag rq'>rqalpha已实现</span>":"<span class='tag pv'>临时等权</span>";
+    const badge = h.source==="rqalpha"?"<span class='tag rq'>rqalpha已实现</span>"
+        :h.source==="pending"?"<span class='tag pv2'>预计下月·待定</span>"
+        :"<span class='tag pv'>临时等权</span>";
     const thin = h.thin?`<span class='tag warn'>⚠该月末仅 ${h.rows.length} 只</span>`:"";
     const cells = (h.rows||[]).map(r=>`<span class="hcell">${r.name||r.code} <b>${(r.weight*100).toFixed(1)}%</b></span>`).join("")||"<span class='hcell'>空仓</span>";
     const cash = h.cash_w>0.005?`<span class="hcell cash">现金 ${(h.cash_w*100).toFixed(1)}%</span>`:"";
-    return `<details class="mrow"${idx===hist.length-1?" open":""}><summary>${h.month.slice(0,4)}-${h.month.slice(4)} · ${(h.rows||[]).length}只 ${badge}${thin} <i>${fdate(h.date)}</i></summary><div class="hrow">${cells}${cash}</div></details>`;
+    return `<details class="mrow"${idx===0?" open":""}><summary>${h.month.slice(0,4)}-${h.month.slice(4)} · ${(h.rows||[]).length}只 ${badge}${thin} <i>${fdate(h.date)}</i></summary><div class="hrow">${cells}${cash}</div></details>`;
   }).join("");
 }
 
@@ -119,6 +122,9 @@ function renderNav(){
   }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
   const NAV=D.nav.nav||[];
+  const bv={}; for(const c in (D.benchmarks||{})) bv[D.benchmarks[c].name]=D.benchmarks[c].values||[];
+  const pc=x=>x==null?"—":(x>=0?"+":"")+x.toFixed(2)+"%";
+  const clr=x=>x>=0?"#f0776d":"#3fb27f";
   const navTip={trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},
     formatter:(ps)=>{
       if(!ps||!ps.length) return "";
@@ -126,11 +132,17 @@ function renderNav(){
       const day= i>0 && NAV[i-1] ? (NAV[i]/NAV[i-1]-1)*100 : 0;
       const cum=(NAV[i]-( (D.meta&&D.meta.initial_nav)||1 ))*100;
       const ddv=(D.nav.drawdown&&D.nav.drawdown[i]!=null)?D.nav.drawdown[i]*100:0;
-      const ccol=day>=0?"#f0776d":"#3fb27f";
       let out=`<div style="font-weight:600;margin-bottom:4px">${ps[0].axisValue}</div>`;
-      out+=`组合净值 <b>${NAV[i].toFixed(4)}</b> <span style="color:${ccol}">当日 ${day>=0?"+":""}${day.toFixed(2)}%</span><br/>`;
-      out+=`累计收益 <span style="color:${cum>=0?"#f0776d":"#3fb27f"}">${cum>=0?"+":""}${cum.toFixed(2)}%</span>　当前回撤 ${ddv.toFixed(2)}%<br/>`;
-      ps.forEach(p=>{ if(p.seriesName!=="组合净值"&&p.value!=null) out+=`${p.marker}${p.seriesName} ${(+p.value).toFixed(4)}<br/>`;});
+      out+=`组合净值 <b>${NAV[i].toFixed(4)}</b> <span style="color:${clr(day)}">当日 ${pc(day)}</span><br/>`;
+      out+=`累计收益 <span style="color:${clr(cum)}">${pc(cum)}</span>　当前回撤 ${ddv.toFixed(2)}%<br/>`;
+      for(const p of ps){ if(p.seriesName==="组合净值") continue;
+        const arr=bv[p.seriesName]||[]; const v=arr[i]; const pv=i>0?arr[i-1]:null;
+        const bday=(v&&pv)?(v/pv-1)*100:null;
+        const ex=(v&&NAV[i])?(NAV[i]/v-1)*100:null;
+        out+=`${p.marker}${p.seriesName} <span style="color:#8b949e">${v==null?"—":(+v).toFixed(4)}</span>`
+          +` 单日 <span style="color:${bday==null?"#8b949e":clr(bday)}">${pc(bday)}</span>`
+          +` 累计超额 <span style="color:${ex==null?"#8b949e":clr(ex)}">${pc(ex)}</span><br/>`;
+      }
       return out;
     }};
   ch.setOption({
