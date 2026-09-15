@@ -48,19 +48,24 @@ function renderKPI(){
   const bEnd = c=>{const a=(bm[c]&&bm[c].values)||[];for(let i=a.length-1;i>=0;i--){if(a[i]!=null)return a[i];}return null;};
   const exHS = (last&&bEnd("000922.CSI"))? last/bEnd("000922.CSI")-1 : null;
   const ex300= (last&&bEnd("000300.SH"))? last/bEnd("000300.SH")-1 : null;
+  // [标签, 值, 涨跌色类, 环比值, 环比单位]
   const cards=[
     ["最新净值", last?last.toFixed(4):"—", ""],
     ["当日收益", pct(dayRet), cls(dayRet)],
     ["累计收益", pct(since), cls(since)],
+    ["全市场当日中位", mt.mkt_median==null?"—":((mt.mkt_median>=0?"+":"")+mt.mkt_median.toFixed(2)+"%"), cls(mt.mkt_median||0)],
     ["年化收益", pct(mt.ann_return), cls(mt.ann_return||0)],
-    ["年化波动", pct(mt.ann_vol), ""],
-    ["夏普比率", mt.sharpe!=null?mt.sharpe.toFixed(2):"—", (mt.sharpe||0)>=1?"up":""],
+    ["年化波动", pct(mt.ann_vol), "", mt.ann_vol_d, "pp"],
+    ["夏普比率", mt.sharpe!=null?mt.sharpe.toFixed(2):"—", (mt.sharpe||0)>=1?"up":"", mt.sharpe_d, ""],
     ["最大回撤", pct(mt.max_drawdown), "down"],
-    ["超额·中证红利", exHS==null?"—":pct(exHS), cls(exHS||0)],
-    ["超额·沪深300", ex300==null?"—":pct(ex300), cls(ex300||0)],
+    ["超额·中证红利", exHS==null?"—":pct(exHS), cls(exHS||0), mt.ex_hs_d, "pp"],
+    ["超额·沪深300", ex300==null?"—":pct(ex300), cls(ex300||0), mt.ex_300_d, "pp"],
   ];
+  const dv=(d,u)=>{ if(d==null||isNaN(d)) return "";
+    const txt=(d>=0?"+":"")+d.toFixed(u==="pp"?2:3)+(u||""); const c=d>=0?"up":"down";
+    return `<div class="kd ${c}">环比 ${d>=0?"▲":"▼"} ${txt}</div>`; };
   $("kpis").innerHTML = cards.map(c=>
-    `<div class="kpi"><div class="k">${c[0]}</div><div class="v ${c[2]}">${c[1]}</div></div>`).join("");
+    `<div class="kpi"><div class="k">${c[0]}</div><div class="v ${c[2]}">${c[1]}</div>${c[3]!=null?dv(c[3],c[4]):""}</div>`).join("");
 }
 
 function renderReport(){
@@ -93,11 +98,11 @@ function renderSignal(){
 
 function renderNav(){
   const dates=(D.nav.dates||[]).map(fdate);
-  const series=[{name:"组合净值",type:"line",smooth:true,showSymbol:false,lineStyle:{width:2.5,color:"#4ea1ff"},itemStyle:{color:"#4ea1ff"},data:D.nav.nav,z:5}];
+  const series=[{name:"组合净值",type:"line",smooth:true,showSymbol:false,lineStyle:{width:2.5,color:"#5b8cff"},itemStyle:{color:"#5b8cff"},data:D.nav.nav,z:5}];
   const leg=["组合净值"];
   const colors={};
   for(const c in (D.benchmarks||{})){
-    const b=D.benchmarks[c], col=c==="000922.CSI"?"#e6b566":"#8b949e";
+    const b=D.benchmarks[c], col=c==="000922.CSI"?"#e6b566":"#8b95b5";
     series.push({name:b.name,type:"line",smooth:true,showSymbol:false,lineStyle:{width:1.2,type:"dashed",color:col},itemStyle:{color:col},data:b.values});
     leg.push(b.name);
   }
@@ -124,8 +129,8 @@ function renderNav(){
   const NAV=D.nav.nav||[];
   const bv={}; for(const c in (D.benchmarks||{})) bv[D.benchmarks[c].name]=D.benchmarks[c].values||[];
   const pc=x=>x==null?"—":(x>=0?"+":"")+x.toFixed(2)+"%";
-  const clr=x=>x>=0?"#f0776d":"#3fb27f";
-  const navTip={trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},
+  const clr=x=>x>=0?"#e05c5c":"#3ecf8e";
+  const navTip={trigger:"axis",backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"},
     formatter:(ps)=>{
       if(!ps||!ps.length) return "";
       const i=ps[0].dataIndex;
@@ -139,20 +144,20 @@ function renderNav(){
         const arr=bv[p.seriesName]||[]; const v=arr[i]; const pv=i>0?arr[i-1]:null;
         const bday=(v&&pv)?(v/pv-1)*100:null;
         const ex=(v&&NAV[i])?(NAV[i]/v-1)*100:null;
-        out+=`${p.marker}${p.seriesName} <span style="color:#8b949e">${v==null?"—":(+v).toFixed(4)}</span>`
-          +` 单日 <span style="color:${bday==null?"#8b949e":clr(bday)}">${pc(bday)}</span>`
-          +` 累计超额 <span style="color:${ex==null?"#8b949e":clr(ex)}">${pc(ex)}</span><br/>`;
+        out+=`${p.marker}${p.seriesName} <span style="color:#8b95b5">${v==null?"—":(+v).toFixed(4)}</span>`
+          +` 单日 <span style="color:${bday==null?"#8b95b5":clr(bday)}">${pc(bday)}</span>`
+          +` 累计超额 <span style="color:${ex==null?"#8b95b5":clr(ex)}">${pc(ex)}</span><br/>`;
       }
       return out;
     }};
   ch.setOption({
     backgroundColor:"transparent",
-    legend:{data:leg,textStyle:{color:"#8b949e"},top:0,right:0},
+    legend:{data:leg,textStyle:{color:"#8b95b5"},top:0,right:0},
     tooltip:navTip,
     grid:{left:48,right:20,top:30,bottom:50},
-    xAxis:{type:"category",data:dates,axisLine:{lineStyle:{color:"#2a3340"}},axisLabel:{color:"#8b949e"}},
-    yAxis:{type:"value",scale:true,splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
-    dataZoom:[{type:"inside"},{type:"slider",height:16,bottom:8,borderColor:"#2a3340",backgroundColor:"#12171e",fillerColor:"rgba(78,161,255,.15)",textStyle:{color:"#8b949e"}}],
+    xAxis:{type:"category",data:dates,axisLine:{lineStyle:{color:"#2a3450"}},axisLabel:{color:"#8b95b5"}},
+    yAxis:{type:"value",scale:true,splitLine:{lineStyle:{color:"#212a44"}},axisLabel:{color:"#8b95b5"}},
+    dataZoom:[{type:"inside"},{type:"slider",height:16,bottom:8,borderColor:"#2a3450",backgroundColor:"#111726",fillerColor:"rgba(91,140,255,.15)",textStyle:{color:"#8b95b5"}}],
     series
   });
   // 回撤
@@ -160,10 +165,10 @@ function renderNav(){
   const c2=echarts.init($("ddChart"),null,{renderer:"canvas"});
   c2.setOption({
     backgroundColor:"transparent",grid:{left:48,right:20,top:8,bottom:18},
-    xAxis:{type:"category",data:dates,axisLabel:{show:false},axisLine:{lineStyle:{color:"#2a3340"}}},
-    yAxis:{type:"value",splitLine:{show:false},axisLabel:{color:"#8b949e",formatter:"{value}%"}},
-    tooltip:{trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},valueFormatter:v=>v.toFixed(2)+"%"},
-    series:[{name:"回撤",type:"line",smooth:true,showSymbol:false,data:dd,lineStyle:{width:1,color:"#f0776d"},areaStyle:{color:"rgba(240,119,109,.18)"}}]
+    xAxis:{type:"category",data:dates,axisLabel:{show:false},axisLine:{lineStyle:{color:"#2a3450"}}},
+    yAxis:{type:"value",splitLine:{show:false},axisLabel:{color:"#8b95b5",formatter:"{value}%"}},
+    tooltip:{trigger:"axis",backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"},valueFormatter:v=>v.toFixed(2)+"%"},
+    series:[{name:"回撤",type:"line",smooth:true,showSymbol:false,data:dd,lineStyle:{width:1,color:"#e05c5c"},areaStyle:{color:"rgba(224,92,92,.18)"}}]
   });
   window.addEventListener("resize",()=>{ch.resize();c2.resize();});
 }
@@ -174,28 +179,28 @@ function renderMonthly(){
   const benches=D.meta.benchmarks||{};
   const pct=a=>a.map(v=>v==null?null:+(v*100).toFixed(2));
   const series=[{name:"组合",type:"bar",data:pct(rows.map(x=>x.ret)),
-                 itemStyle:{color:p=> (p.value>=0?"#f0776d":"#3fb27f")},barWidth:"22%"}];
-  const bcol={"000300.SH":"#8b949e","000922.CSI":"#e6b566"};
-  const ecol={"000300.SH":"#4ea1ff","000922.CSI":"#c084fc"};
+                 itemStyle:{color:p=> (p.value>=0?"#e05c5c":"#3ecf8e")},barWidth:"22%"}];
+  const bcol={"000300.SH":"#8b95b5","000922.CSI":"#e6b566"};
+  const ecol={"000300.SH":"#5b8cff","000922.CSI":"#b07bff"};
   const legend=["组合"];
   for(const c in benches){
     series.push({name:benches[c],type:"bar",data:pct(rows.map(x=>x["b_"+c])),
-                 itemStyle:{color:bcol[c]||"#8b949e"},barWidth:"22%"});
+                 itemStyle:{color:bcol[c]||"#8b95b5"},barWidth:"22%"});
     legend.push(benches[c]);
   }
   for(const c in benches){
     series.push({name:"超额vs"+benches[c],type:"line",smooth:true,showSymbol:true,symbolSize:6,
-                 lineStyle:{width:2,type:"dashed",color:ecol[c]||"#4ea1ff"},itemStyle:{color:ecol[c]||"#4ea1ff"},
+                 lineStyle:{width:2,type:"dashed",color:ecol[c]||"#5b8cff"},itemStyle:{color:ecol[c]||"#5b8cff"},
                  data:pct(rows.map(x=>x["ex_"+c]))});
     legend.push("超额vs"+benches[c]);
   }
   const ch=echarts.init($("monthChart"),null,{renderer:"canvas"});
   ch.setOption({backgroundColor:"transparent",
-    legend:{top:0,left:0,textStyle:{color:"#8b949e",fontSize:11},data:legend,type:"scroll"},
+    legend:{top:0,left:0,textStyle:{color:"#8b95b5",fontSize:11},data:legend,type:"scroll"},
     grid:{left:44,right:16,top:40,bottom:28},
-    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"},valueFormatter:v=>(v==null?"—":v+"%")},
-    xAxis:{type:"category",data:labels,axisLabel:{color:"#8b949e",rotate:30},axisLine:{lineStyle:{color:"#2a3340"}}},
-    yAxis:{type:"value",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e",formatter:"{value}%"}},
+    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"},valueFormatter:v=>(v==null?"—":v+"%")},
+    xAxis:{type:"category",data:labels,axisLabel:{color:"#8b95b5",rotate:30},axisLine:{lineStyle:{color:"#2a3450"}}},
+    yAxis:{type:"value",splitLine:{lineStyle:{color:"#212a44"}},axisLabel:{color:"#8b95b5",formatter:"{value}%"}},
     series});
   window.addEventListener("resize",()=>ch.resize());
 }
@@ -205,7 +210,7 @@ function renderHoldings(){
   const src=h.source==="rqalpha"?"rqalpha 已实现":"临时等权";
   $("holdAsof").textContent = (h.asof?("定价日 "+fdate(h.asof)+" · "+src):"")+"  本月涨跌=自本期起点全收益，净值贡献=期初权重×涨幅";
   const rows=h.rows||[];
-  const sgn=v=>v>=0?`<span style="color:#f0776d">+${v.toFixed(2)}</span>`:`<span style="color:#3fb27f">${v.toFixed(2)}</span>`;
+  const sgn=v=>v>=0?`<span style="color:#e05c5c">+${v.toFixed(2)}</span>`:`<span style="color:#3ecf8e">${v.toFixed(2)}</span>`;
   let html="<tr><th>代码</th><th>名称</th><th>行业</th><th>股息率%</th><th>PE</th><th>权重</th><th>本月涨跌%</th><th>净值贡献pp</th></tr>";
   rows.forEach(r=>{
     html+=`<tr><td class="num">${r.code}</td><td>${r.name||""}</td><td>${r.industry||""}</td>`+
@@ -261,38 +266,38 @@ function renderExposure(){
   // 雷达：风格组 组合 vs 基准
   const radar=echarts.init($("expoRadar"),null,{renderer:"canvas"});
   radar.setOption({backgroundColor:"transparent",
-    title:{text:`风格暴露 组合 vs ${BN}`,left:"center",textStyle:{color:"#8b949e",fontSize:13}},
-    legend:{bottom:0,textStyle:{color:"#8b949e"},data:["组合",BN]},
-    tooltip:{backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
-    radar:{indicator:gNames.map(g=>({name:g,max:1.8,min:-1.8})),axisName:{color:"#8b949e",fontSize:11},
-      splitLine:{lineStyle:{color:"#233041"}},splitArea:{show:false},axisLine:{lineStyle:{color:"#233041"}}},
+    title:{text:`风格暴露 组合 vs ${BN}`,left:"center",textStyle:{color:"#8b95b5",fontSize:13}},
+    legend:{bottom:0,textStyle:{color:"#8b95b5"},data:["组合",BN]},
+    tooltip:{backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"}},
+    radar:{indicator:gNames.map(g=>({name:g,max:1.8,min:-1.8})),axisName:{color:"#8b95b5",fontSize:11},
+      splitLine:{lineStyle:{color:"#26324f"}},splitArea:{show:false},axisLine:{lineStyle:{color:"#26324f"}}},
     series:[{type:"radar",data:[
-      {name:"组合",value:gNames.map(g=>(e.current_group||{})[g]??0),lineStyle:{color:"#4ea1ff"},itemStyle:{color:"#4ea1ff"},areaStyle:{color:"rgba(78,161,255,.15)"}},
+      {name:"组合",value:gNames.map(g=>(e.current_group||{})[g]??0),lineStyle:{color:"#5b8cff"},itemStyle:{color:"#5b8cff"},areaStyle:{color:"rgba(91,140,255,.15)"}},
       {name:BN,value:gNames.map(g=>(e.bench_group||{})[g]??0),lineStyle:{color:"#e6b566"},itemStyle:{color:"#e6b566"}}]}]});
   // 历史折线：各组暴露随时间
   const hist=echarts.init($("expoHist"),null,{renderer:"canvas"});
   const hd=(e.history||[]).map(h=>fdate(h.date));
   hist.setOption({backgroundColor:"transparent",
-    title:{text:"风格暴露趋势",left:"center",textStyle:{color:"#8b949e",fontSize:13}},
-    legend:{bottom:0,type:"scroll",textStyle:{color:"#8b949e"},data:gNames},
-    tooltip:{trigger:"axis",backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
+    title:{text:"风格暴露趋势",left:"center",textStyle:{color:"#8b95b5",fontSize:13}},
+    legend:{bottom:0,type:"scroll",textStyle:{color:"#8b95b5"},data:gNames},
+    tooltip:{trigger:"axis",backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"}},
     grid:{left:40,right:16,top:36,bottom:44},
-    xAxis:{type:"category",data:hd,axisLabel:{color:"#8b949e"},axisLine:{lineStyle:{color:"#2a3340"}}},
-    yAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
+    xAxis:{type:"category",data:hd,axisLabel:{color:"#8b95b5"},axisLine:{lineStyle:{color:"#2a3450"}}},
+    yAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#212a44"}},axisLabel:{color:"#8b95b5"}},
     series:gNames.map(g=>({name:g,type:"line",smooth:true,showSymbol:false,
       data:(e.history||[]).map(h=>h.group?h.group[g]:null)}))});
   // 因子柱：18因子 组合暴露 + 主动(−基准)，按主动绝对值降序
   const bars=echarts.init($("expoBars"),null,{renderer:"canvas"});
   const fs=[...(e.current||[])].sort((a,b)=>Math.abs(b.active??0)-Math.abs(a.active??0));
   bars.setOption({backgroundColor:"transparent",
-    title:{text:`单因子暴露 与 主动(vs ${BN})`,left:"center",textStyle:{color:"#8b949e",fontSize:13}},
-    legend:{top:2,right:0,textStyle:{color:"#8b949e"},data:["组合",`主动(−${BN})`]},
-    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2530",borderColor:"#2a3340",textStyle:{color:"#e6edf3"}},
+    title:{text:`单因子暴露 与 主动(vs ${BN})`,left:"center",textStyle:{color:"#8b95b5",fontSize:13}},
+    legend:{top:2,right:0,textStyle:{color:"#8b95b5"},data:["组合",`主动(−${BN})`]},
+    tooltip:{trigger:"axis",axisPointer:{type:"shadow"},backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"}},
     grid:{left:80,right:16,top:30,bottom:24},
-    xAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#1a2029"}},axisLabel:{color:"#8b949e"}},
-    yAxis:{type:"category",data:fs.map(x=>x.name),axisLabel:{color:"#8b949e",fontSize:11},axisLine:{lineStyle:{color:"#2a3340"}}},
-    series:[{name:"组合",type:"bar",data:fs.map(x=>x.raw),itemStyle:{color:"#4ea1ff"},barGap:0},
-            {name:`主动(−${BN})`,type:"bar",data:fs.map(x=>x.active??null),itemStyle:{color:"#f0776d"}}]});
+    xAxis:{type:"value",name:"z",splitLine:{lineStyle:{color:"#212a44"}},axisLabel:{color:"#8b95b5"}},
+    yAxis:{type:"category",data:fs.map(x=>x.name),axisLabel:{color:"#8b95b5",fontSize:11},axisLine:{lineStyle:{color:"#2a3450"}}},
+    series:[{name:"组合",type:"bar",data:fs.map(x=>x.raw),itemStyle:{color:"#5b8cff"},barGap:0},
+            {name:`主动(−${BN})`,type:"bar",data:fs.map(x=>x.active??null),itemStyle:{color:"#e05c5c"}}]});
   window.addEventListener("resize",()=>{radar.resize();hist.resize();bars.resize();});
 }
 init();
