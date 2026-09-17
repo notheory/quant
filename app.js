@@ -6,7 +6,10 @@ const cls = x => x>=0?"up":"down";
 
 function init(){
   const m = D.meta||{};
-  $("subtitle").textContent = "· 净值起点 " + fdate(m.start_date||"") + " = 1.0000（实盘1:1跟踪起始）· 低频月末调仓 · 市值等权 · 全收益(含分红再投)";
+  const wk = m.initial_total? ("，≈"+(m.initial_total/1e4).toFixed(2)+"万本金") : "";
+  const bt = m.period_start? (" · 曲线含 rqalpha 回测尾("+fdate(m.period_start)+"起)") : "";
+  $("subtitle").textContent = "· 净值以实盘首日 "+fdate(m.start_date||"")+" 总资产重定基 = 1.0000"+wk+bt+
+    " · 低频月末调仓 · 市值等权 · 全收益(含分红再投) · 年化/波动/夏普/回撤/超额按全区间口径";
   $("updated").textContent = m.updated_at||"—";
   renderKPI();
   renderReport();
@@ -19,9 +22,13 @@ function init(){
   renderExposure();
   const rq=(D.meta&&D.meta.rq)||{};
   $("foot").innerHTML =
-    "口径：rqalpha 已实现成交(等权/成本/停牌) 至 "+(rq.last?fdate(rq.last):"—")+
+    "口径：曲线左侧灰底为 rqalpha 回测尾(自 "+(m.period_start?fdate(m.period_start):"—")+"，按实盘首日归一)；"+
+    "实盘段以 "+fdate(m.start_date||"")+" 总资产重定基=1.0000。"+
+    "rqalpha 已实现成交(等权/成本/停牌) 至 "+(rq.last?fdate(rq.last):"—")+
     (rq.covered?`，其后为临时市值等权、次月自动修正`:"")+
-    " · 全收益(分红再投资) · 数据源 rqalpha + tushare · 起始 "+(m.start_date||"")+" 净值1.00。 本看板仅供业绩展示，不构成投资建议。";
+    " · 全收益(分红再投资) · 数据源 rqalpha + tushare。"+
+    "年化/波动/夏普/最大回撤/超额按整条展示区间(回测+实盘)计；最新净值/当日/累计收益以实盘(0529)为基。"+
+    " 本看板仅供业绩展示，不构成投资建议。";
 }
 
 function renderHistory(){
@@ -46,20 +53,20 @@ function renderKPI(){
   const since = last? last-1 : 0;
   const bm=D.benchmarks||{};
   const bEnd = c=>{const a=(bm[c]&&bm[c].values)||[];for(let i=a.length-1;i>=0;i--){if(a[i]!=null)return a[i];}return null;};
-  const exHS = (last&&bEnd("000922.CSI"))? last/bEnd("000922.CSI")-1 : null;
-  const ex300= (last&&bEnd("000300.SH"))? last/bEnd("000300.SH")-1 : null;
+  const exHS = (mt.ex_hs_full!=null)? mt.ex_hs_full : ((last&&bEnd("000922.CSI"))? last/bEnd("000922.CSI")-1 : null);
+  const ex300= (mt.ex_300_full!=null)? mt.ex_300_full : ((last&&bEnd("000300.SH"))? last/bEnd("000300.SH")-1 : null);
   // [标签, 值, 涨跌色类, 环比值, 环比单位]
   const cards=[
     ["最新净值", last?last.toFixed(4):"—", ""],
     ["当日收益", pct(dayRet), cls(dayRet)],
-    ["累计收益", pct(since), cls(since)],
+    ["累计收益·实盘", pct(since), cls(since)],
     ["全市场当日中位", mt.mkt_median==null?"—":((mt.mkt_median>=0?"+":"")+mt.mkt_median.toFixed(2)+"%"), cls(mt.mkt_median||0)],
     ["年化收益", pct(mt.ann_return), cls(mt.ann_return||0)],
     ["年化波动", pct(mt.ann_vol), "", mt.ann_vol_d, "pp"],
     ["夏普比率", mt.sharpe!=null?mt.sharpe.toFixed(2):"—", (mt.sharpe||0)>=1?"up":"", mt.sharpe_d, ""],
     ["最大回撤", pct(mt.max_drawdown), "down"],
-    ["超额·中证红利", exHS==null?"—":pct(exHS), cls(exHS||0), mt.ex_hs_d, "pp"],
-    ["超额·沪深300", ex300==null?"—":pct(ex300), cls(ex300||0), mt.ex_300_d, "pp"],
+    ["区间超额·红利", exHS==null?"—":pct(exHS), cls(exHS||0), mt.ex_hs_d, "pp"],
+    ["区间超额·沪深300", ex300==null?"—":pct(ex300), cls(ex300||0), mt.ex_300_d, "pp"],
   ];
   const dv=(d,u)=>{ if(d==null||isNaN(d)) return "";
     const txt=(d>=0?"+":"")+d.toFixed(u==="pp"?2:3)+(u||""); const c=d>=0?"up":"down";
@@ -145,7 +152,7 @@ function renderNav(){
       const ddv=(D.nav.drawdown&&D.nav.drawdown[i]!=null)?D.nav.drawdown[i]*100:0;
       let out=`<div style="font-weight:600;margin-bottom:4px">${ps[0].axisValue}</div>`;
       out+=`组合净值 <b>${NAV[i].toFixed(4)}</b> <span style="color:${clr(day)}">当日 ${pc(day)}</span><br/>`;
-      out+=`累计收益 <span style="color:${clr(cum)}">${pc(cum)}</span>　当前回撤 ${ddv.toFixed(2)}%<br/>`;
+      out+=`较实盘起点 <span style="color:${clr(cum)}">${pc(cum)}</span>　当前回撤 ${ddv.toFixed(2)}%<br/>`;
       for(const p of ps){ if(p.seriesName==="组合净值") continue;
         const arr=bv[p.seriesName]||[]; const v=arr[i]; const pv=i>0?arr[i-1]:null;
         const bday=(v&&pv)?(v/pv-1)*100:null;
