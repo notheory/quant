@@ -6,10 +6,18 @@ const cls = x => x>=0?"up":"down";
 
 function init(){
   const m = D.meta||{};
-  const wk = m.initial_total? ("，≈"+(m.initial_total/1e4).toFixed(2)+"万本金") : "";
-  const bt = m.period_start? (" · 曲线含 rqalpha 回测尾("+fdate(m.period_start)+"起)") : "";
-  $("subtitle").textContent = "· 净值以实盘首日 "+fdate(m.start_date||"")+" 总资产重定基 = 1.0000"+wk+bt+
+  const wan = m.initial_total? ("，≈"+(m.initial_total/1e4).toFixed(2)+"万本金") : "";
+  const sa = m.backtest_start_asset? ("，倒推 "+fdate(m.period_start||"")+" 起始 ≈"+(m.backtest_start_asset/1e4).toFixed(2)+"万") : "";
+  const bt = m.period_start? (" · 含 rqalpha 回测尾("+fdate(m.period_start)+"起"+sa+")") : "";
+  $("subtitle").textContent = "· 净值以实盘首日 "+fdate(m.start_date||"")+" 总资产重定基 = 1.0000"+wan+bt+
     " · 低频月末调仓 · 市值等权 · 全收益(含分红再投) · 年化/波动/夏普/回撤/超额按全区间口径";
+  const vn=$("valueNote");
+  if(vn && m.initial_total){
+    vn.textContent = "本金口径：以 0529 实盘首日总资产 "+(m.initial_total/1e4).toFixed(2)+" 万 = 净值 1.0000 为锚，"+
+      "曲线上任一时点总资产 = "+(m.initial_total/1e4).toFixed(2)+" 万 × 该点净值"+
+      (m.backtest_start_asset? ("；倒推回测起点 "+fdate(m.period_start||"")+" 起始资产 ≈"+(m.backtest_start_asset/1e4).toFixed(2)+" 万（按策略回测成长路径折算）"):"")+
+      "。最新净值 "+(( (D.nav.nav||[]).slice(-1)[0])||1).toFixed(4)+" ≈ "+(((m.initial_total*((D.nav.nav||[]).slice(-1)[0]||1))/1e4).toFixed(2))+" 万。";
+  }
   $("updated").textContent = m.updated_at||"—";
   renderKPI();
   renderReport();
@@ -140,6 +148,7 @@ function renderNav(){
   }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
   const NAV=D.nav.nav||[];
+  const PRIN=(D.meta&&D.meta.initial_total)||0;
   const bv={}; for(const c in (D.benchmarks||{})) bv[D.benchmarks[c].name]=D.benchmarks[c].values||[];
   const pc=x=>x==null?"—":(x>=0?"+":"")+x.toFixed(2)+"%";
   const clr=x=>x>=0?"#e05c5c":"#3ecf8e";
@@ -152,6 +161,7 @@ function renderNav(){
       const ddv=(D.nav.drawdown&&D.nav.drawdown[i]!=null)?D.nav.drawdown[i]*100:0;
       let out=`<div style="font-weight:600;margin-bottom:4px">${ps[0].axisValue}</div>`;
       out+=`组合净值 <b>${NAV[i].toFixed(4)}</b> <span style="color:${clr(day)}">当日 ${pc(day)}</span><br/>`;
+      if(PRIN) out+=`总资产 <b>${(PRIN*NAV[i]/1e4).toFixed(2)}</b> 万元<br/>`;
       out+=`较实盘起点 <span style="color:${clr(cum)}">${pc(cum)}</span>　当前回撤 ${ddv.toFixed(2)}%<br/>`;
       for(const p of ps){ if(p.seriesName==="组合净值") continue;
         const arr=bv[p.seriesName]||[]; const v=arr[i]; const pv=i>0?arr[i-1]:null;
