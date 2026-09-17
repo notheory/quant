@@ -109,21 +109,27 @@ function renderNav(){
   const rq=(D.meta&&D.meta.rq)||{};
   const stg=D.nav.stages||[];
   const provStartIdx=stg.findIndex(s=>s==="provisional");
-  if(provStartIdx>=0){
-    const bdate=D.nav.dates[provStartIdx];
-    series[0].markArea={silent:true,itemStyle:{color:"rgba(230,181,102,.08)"},
-      data:[[{xAxis:fdate(bdate)},{xAxis:"max"}]]};
-    series[0].markLine={silent:true,symbol:"none",lineStyle:{color:"#e6b566",type:"dashed"},
-      label:{formatter:"rqalpha 已实现 → 临时等权",color:"#e6b566",fontSize:11},
-      data:[{xAxis:fdate(bdate)}]};
+  const lsi=(D.meta&&D.meta.live_start_index)||0;
+  const liveDate=D.nav.dates[lsi], firstDate=D.nav.dates[0], lastDate=D.nav.dates[D.nav.dates.length-1];
+  const areas=[], mlines=[];
+  if(lsi>0){
+    areas.push([{name:"回测",itemStyle:{color:"rgba(139,149,181,.10)"},label:{color:"#8b95b5",fontSize:11},
+                 xAxis:fdate(firstDate)},{xAxis:fdate(liveDate)}]);
+    mlines.push({name:"实盘开始",xAxis:fdate(liveDate),lineStyle:{color:"#3ecf8e",width:1.5},
+                 label:{formatter:"实盘开始 "+fdate(liveDate),color:"#3ecf8e",fontSize:11}});
   }
+  areas.push([{name:"实盘",itemStyle:{color:"rgba(230,181,102,.10)"},label:{color:"#e6b566",fontSize:11},
+               xAxis:fdate(liveDate||firstDate)},{xAxis:"max"}]);
+  if(provStartIdx>=0)
+    mlines.push({xAxis:fdate(D.nav.dates[provStartIdx]),lineStyle:{color:"#e6b566",type:"dashed",width:1},
+                 label:{formatter:"→ 临时等权(待次月rqalpha修正)",color:"#e6b566",fontSize:10}});
+  series[0].markArea={silent:true,data:areas};
+  if(mlines.length) series[0].markLine={silent:true,symbol:"none",data:mlines};
   const h=document.querySelector("#navHint");
   if(h){
-    if(rq.covered && provStartIdx<0){
-      h.textContent=`全程 rqalpha 回测真实成交(${rq.n_days}日，含真实现金余额)·全收益`;
-    }else if(rq.covered){
-      h.textContent=`rqalpha 已实现至 ${fdate((D.nav.dates[provStartIdx-1]||rq.last))}，其后为临时等权(待次月rqalpha修正)`;
-    }else{ h.textContent="全收益(后复权，分红再投资)口径"; }
+    let t=(lsi>0?"左侧灰底为 rqalpha 回测尾(按 "+fdate(liveDate)+" 归一对齐)；":"")+
+          (provStartIdx>=0?"绿线起为实盘，金虚线后为临时等权(待次月修正)。":"实盘为 rqalpha 真实成交·全收益。");
+    h.textContent=t;
   }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
   const NAV=D.nav.nav||[];
