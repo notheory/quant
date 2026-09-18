@@ -20,10 +20,10 @@ function init(){
   }
   $("updated").textContent = m.updated_at||"—";
   renderKPI();
-  renderReport();
   renderSignal();
   renderNav();
   renderMonthly();
+  renderFundPerf();
   renderHoldings();
   renderHistory();
   renderEvents();
@@ -201,6 +201,34 @@ function renderNav(){
   ch.on("datazoom",()=>zsync(ch,c2));
   c2.on("datazoom",()=>zsync(c2,ch));
   window.addEventListener("resize",()=>{ch.resize();c2.resize();});
+}
+
+function renderFundPerf(){
+  const fp=D.fundperf; if(!fp||!fp.rows||!fp.rows.length){ return; }
+  $("fpCard").style.display="";
+  const sp=x=>x==null?"—":(x>=0?"+":"")+(x*100).toFixed(2)+"%";
+  const cc=x=>x==null?"":(x>=0?"up":"down");
+  $("fpHint").textContent=`同类=“红利”主题场内基金 ${fp.pool_total} 只(成立≥1年) · 截至 ${fdate(fp.asof)} · 组合列为费前真实涨幅`;
+  let html="<tr><th>周期</th><th>组合</th><th>沪深300</th><th>中证红利</th><th>同类平均</th><th>同类排名</th><th>分位</th></tr>";
+  for(const r of fp.rows){
+    let rk="—", q="—";
+    if(r.rank){
+      rk=`第 ${r.rank} / ${r.n}`;
+      const p=Math.round(r.pct*100);
+      const t=r.pct<=0.10?["顶尖","tg"]:r.pct<=0.25?["优秀","tb"]:r.pct<=0.50?["中上","tb"]:r.pct<=0.75?["中游","tm"]:["靠后","tw"];
+      q=`<span class="q ${t[1]}">${t[0]}·前${p}%</span>`+(r.pure_live?"":'<span class="qtag">含回测</span>');
+    }
+    html+=`<tr><td class="fp-l">${r.label}</td>`+
+      `<td class="num ${cc(r.strat)}">${sp(r.strat)}</td>`+
+      `<td class="num">${sp(r.hs300)}</td><td class="num">${sp(r.hs)}</td>`+
+      `<td class="num mut">${sp(r.peer_mean)}</td>`+
+      `<td class="num">${rk}</td><td>${q}</td></tr>`;
+  }
+  $("fundPerf").innerHTML=html;
+  $("fpNote").innerHTML="口径：排名为“费后可比”——对组合净值按年化 "+(fp.fee*100).toFixed(1)+"% 扣费(管理+托管)后与同类基金复权净值同区间比较，"
+    +"而“组合”列为未扣费的真实涨幅；基金净值以各自最新披露为准。"
+    +"近6月 / 1年 / 今年以来 / 起始以来 等长窗口含 rqalpha 回测段（实盘自 "+fdate((D.meta&&D.meta.start_date)||"")+" 起），回测无真实申赎与规模冲击、排名偏乐观，已标“含回测”；"
+    +"近1周 / 1月 / 3月 为纯实盘。同类池取当前存续基金，存在幸存者偏差。AI 生成，仅供参考，不构成投资建议。";
 }
 
 function renderMonthly(){
