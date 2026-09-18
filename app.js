@@ -208,27 +208,30 @@ function renderFundPerf(){
   $("fpCard").style.display="";
   const sp=x=>x==null?"—":(x>=0?"+":"")+(x*100).toFixed(2)+"%";
   const cc=x=>x==null?"":(x>=0?"up":"down");
-  $("fpHint").textContent=`同类=“红利”主题场内基金 ${fp.pool_total} 只(成立≥1年) · 截至 ${fdate(fp.asof)} · 组合列为费前真实涨幅`;
-  let html="<tr><th>周期</th><th>组合</th><th>沪深300</th><th>中证红利</th><th>同类平均</th><th>同类排名</th><th>分位</th></tr>";
+  const tier=p=>p<=0.10?["顶尖","tg"]:p<=0.25?["优秀","tb"]:p<=0.50?["中上","tb"]:p<=0.75?["中游","tm"]:["靠后","tw"];
+  const cell=(rk,n,pct,pure)=>{
+    if(rk==null||n==null) return "—";
+    const t=tier(pct);
+    return `<div class="rk">第 ${rk}/${n} <span class="q ${t[1]}">${t[0]}·前${Math.round(pct*100)}%</span></div>`+(pure?"":'<span class="qtag">含回测</span>');
+  };
+  const fa=fp.fee_active!=null?("主动 "+(fp.fee_active*100).toFixed(1)+"%"):"";
+  const fpa=fp.fee_passive!=null?("被动 "+(fp.fee_passive*100).toFixed(1)+"%"):"";
+  $("fpHint").innerHTML=`主锚 ${fp.anchor_name}(${fp.anchor_code})：整段年化超额 <b class="${cc(fp.ann_excess)}">${sp(fp.ann_excess)}</b>　信息比率 <b>${fp.info_ratio==null?"—":fp.info_ratio}</b>　同类池 主动${fp.n_active}/被动${fp.n_passive}　截至 ${fdate(fp.asof)}`;
+  let html=`<tr><th>周期</th><th>组合</th><th>${fp.anchor_name}</th><th>超额·全收益</th><th>主动同类·分位</th><th>被动同类·分位</th></tr>`;
   for(const r of fp.rows){
-    let rk="—", q="—";
-    if(r.rank){
-      rk=`第 ${r.rank} / ${r.n}`;
-      const p=Math.round(r.pct*100);
-      const t=r.pct<=0.10?["顶尖","tg"]:r.pct<=0.25?["优秀","tb"]:r.pct<=0.50?["中上","tb"]:r.pct<=0.75?["中游","tm"]:["靠后","tw"];
-      q=`<span class="q ${t[1]}">${t[0]}·前${p}%</span>`+(r.pure_live?"":'<span class="qtag">含回测</span>');
-    }
     html+=`<tr><td class="fp-l">${r.label}</td>`+
       `<td class="num ${cc(r.strat)}">${sp(r.strat)}</td>`+
-      `<td class="num">${sp(r.hs300)}</td><td class="num">${sp(r.hs)}</td>`+
-      `<td class="num mut">${sp(r.peer_mean)}</td>`+
-      `<td class="num">${rk}</td><td>${q}</td></tr>`;
+      `<td class="num">${sp(r.allincome)}</td>`+
+      `<td class="num ${cc(r.ex_all)}">${sp(r.ex_all)}</td>`+
+      `<td class="rktd">${cell(r.rank_active,r.n_active,r.pct_active,r.pure_live)}</td>`+
+      `<td class="rktd">${cell(r.rank_passive,r.n_passive,r.pct_passive,r.pure_live)}</td></tr>`;
   }
   $("fundPerf").innerHTML=html;
-  $("fpNote").innerHTML="口径：排名为“费后可比”——对组合净值按年化 "+(fp.fee*100).toFixed(1)+"% 扣费(管理+托管)后与同类基金复权净值同区间比较，"
-    +"而“组合”列为未扣费的真实涨幅；基金净值以各自最新披露为准。"
-    +"近6月 / 1年 / 今年以来 / 起始以来 等长窗口含 rqalpha 回测段（实盘自 "+fdate((D.meta&&D.meta.start_date)||"")+" 起），回测无真实申赎与规模冲击、排名偏乐观，已标“含回测”；"
-    +"近1周 / 1月 / 3月 为纯实盘。同类池取当前存续基金，存在幸存者偏差。AI 生成，仅供参考，不构成投资建议。";
+  $("fpNote").innerHTML="口径：主锚＝中证红利全收益指数(H30269，含分红再投)，“超额·全收益”即红利增强的核心超额；“组合”列为费前真实涨幅。"
+    +"同类排名为费后可比——分别按“主动红利池/被动红利池”各自费率中位数（"+([fa,fpa].filter(Boolean).join("、")||"—")+"）对组合扣费后，与同类公募复权净值同区间比较。"
+    +"同类池＝业绩基准或名称含‘红利/股息’∩股票/混合型，剔除港股QDII·联接·FOF、A/C份额去重、成立≥1年、最新规模≥1亿。"
+    +"近6月/1年/今年以来/起始以来 含 rqalpha 回测段（实盘自 "+fdate((D.meta&&D.meta.start_date)||"")+" 起）、回测无真实申赎与规模冲击、排名偏乐观，已标“含回测”；近1周/1月/3月为纯实盘。"
+    +"样本为存续基金，有幸存者偏差；基金净值以各自最新披露为准（周更）。AI 生成，仅供参考，不构成投资建议。";
 }
 
 function renderMonthly(){
