@@ -83,3 +83,14 @@ h1{margin:0;font-size:20px;letter-spacing:.5px}
 .evmore[open] summary{margin-bottom:6px;color:var(--mut)}
 footer{color:var(--mut);font-size:12px;padding:18px 28px 30px;border-top:1px solid var(--line);margin-top:20px}
 a{color:var(--accent)}
+/* 阶段业绩 · 同类排名 */
+.fp td,.fp th{padding:7px 10px}
+.fp .fp-l{text-align:left;color:var(--txt);font-weight:600}
+.fp .num.up{color:var(--up)}.fp .num.down{color:var(--down)}
+.fp td.mut{color:var(--mut)}
+.q{font-size:12px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.q.tg{background:rgba(62,207,142,.18);color:#3ecf8e}
+.q.tb{background:rgba(91,140,255,.18);color:#8fb4ff}
+.q.tm{background:rgba(230,181,102,.16);color:var(--gold)}
+.q.tw{background:rgba(224,92,92,.16);color:#e05c5c}
+.qtag{font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-left:5px;vertical-align:middle}
