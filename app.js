@@ -216,10 +216,12 @@ function renderFundPerf(){
   };
   const fa=fp.fee_active!=null?("主动 "+(fp.fee_active*100).toFixed(1)+"%"):"";
   const fpa=fp.fee_passive!=null?("被动 "+(fp.fee_passive*100).toFixed(1)+"%"):"";
+  const md=d=>d?(fdate(String(d)).slice(2)):"—";
   $("fpHint").innerHTML=`主锚 ${fp.anchor_name}(${fp.anchor_code})：整段年化超额 <b class="${cc(fp.ann_excess)}">${sp(fp.ann_excess)}</b>　信息比率 <b>${fp.info_ratio==null?"—":fp.info_ratio}</b>　同类池 主动${fp.n_active}/被动${fp.n_passive}　截至 ${fdate(fp.asof)}`;
-  let html=`<tr><th>周期</th><th>组合</th><th>${fp.anchor_name}</th><th>超额·全收益</th><th>主动同类·分位</th><th>被动同类·分位</th></tr>`;
+  let html=`<tr><th>周期</th><th>起止</th><th>组合</th><th>${fp.anchor_name}</th><th>超额·全收益</th><th>主动同类·分位</th><th>被动同类·分位</th></tr>`;
   for(const r of fp.rows){
     html+=`<tr><td class="fp-l">${r.label}</td>`+
+      `<td class="per">${md(r.start_date)}→${md(r.end_date)}</td>`+
       `<td class="num ${cc(r.strat)}">${sp(r.strat)}</td>`+
       `<td class="num">${sp(r.allincome)}</td>`+
       `<td class="num ${cc(r.ex_all)}">${sp(r.ex_all)}</td>`+
@@ -227,6 +229,15 @@ function renderFundPerf(){
       `<td class="rktd">${cell(r.rank_passive,r.n_passive,r.pct_passive,r.pure_live)}</td></tr>`;
   }
   $("fundPerf").innerHTML=html;
+  const pp=fp.peers||{};
+  const pchip=p=>`<span class="pf">${p.name}${p.aum?(' · '+p.aum+'亿'):''}${p.fee!=null?(' · 费'+p.fee+'%'):''}${p.ret1y!=null?(' · 近1年 '+(p.ret1y>=0?"+":"")+(p.ret1y*100).toFixed(1)+'%'):''}</span>`;
+  const pgrid=list=>((list&&list.length)?list.map(pchip).join(""):"<span class='pf'>—</span>");
+  if(fp.peers){
+    $("fpPeers").innerHTML=
+      `<details class="peers"><summary>查看同类池明细（主动 ${fp.n_active} 只 · 被动 ${fp.n_passive} 只，按近1年涨幅排序）</summary>`+
+      `<div class="peersub">主动红利池</div><div class="pfgrid">${pgrid(pp.active)}</div>`+
+      `<div class="peersub">被动红利指数池</div><div class="pfgrid">${pgrid(pp.passive)}</div></details>`;
+  }
   $("fpNote").innerHTML="口径：主锚＝中证红利全收益指数(H30269，含分红再投)，“超额·全收益”即红利增强的核心超额；“组合”列为费前真实涨幅。"
     +"同类排名为费后可比——分别按“主动红利池/被动红利池”各自费率中位数（"+([fa,fpa].filter(Boolean).join("、")||"—")+"）对组合扣费后，与同类公募复权净值同区间比较。"
     +"同类池＝业绩基准或名称含‘红利/股息’∩股票/混合型，剔除港股QDII·联接·FOF、A/C份额去重、成立≥1年、最新规模≥1亿。"
