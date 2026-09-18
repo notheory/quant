@@ -217,7 +217,11 @@ function renderFundPerf(){
   const fa=fp.fee_active!=null?("主动 "+(fp.fee_active*100).toFixed(1)+"%"):"";
   const fpa=fp.fee_passive!=null?("被动 "+(fp.fee_passive*100).toFixed(1)+"%"):"";
   const md=d=>d?(fdate(String(d)).slice(2)):"—";
-  $("fpHint").innerHTML=`主锚 ${fp.anchor_name}(${fp.anchor_code})：整段年化超额 <b class="${cc(fp.ann_excess)}">${sp(fp.ann_excess)}</b>　信息比率 <b>${fp.info_ratio==null?"—":fp.info_ratio}</b>　同类池 主动${fp.n_active}/被动${fp.n_passive}　截至 ${fdate(fp.asof)}<span style="color:var(--mut)">（同类净值 T+1 披露，故比较截至前一交易日；组合主净值仍当日更新）</span>`;
+  const lg=fp.lag==null?0:fp.lag;
+  const fcls=lg<=0?"g":(lg===1?"y":"r");
+  const ftxt=lg<=0?"同类·当日对齐":(lg===1?"同类·滞后1日(T+1)":("同类·滞后"+lg+"日·待夜间刷新"));
+  const fresh=`<span class="fresh ${fcls}">${ftxt}</span>`;
+  $("fpHint").innerHTML=`${fresh} 主锚 ${fp.anchor_name}(${fp.anchor_code})：整段年化超额 <b class="${cc(fp.ann_excess)}">${sp(fp.ann_excess)}</b>　信息比率 <b>${fp.info_ratio==null?"—":fp.info_ratio}</b>　同类池 主动${fp.n_active}/被动${fp.n_passive}　截至 ${fdate(fp.asof)}`+(lg>0?`<span style="color:var(--mut)">（组合净值当日 ${fdate(fp.curve_asof)} 已更新，同类净值以各基金最新披露为准）</span>`:"");
   let html=`<tr><th>周期</th><th>起止</th><th>组合</th><th>${fp.anchor_name}</th><th>超额·全收益</th><th>主动同类·分位</th><th>被动同类·分位</th></tr>`;
   for(const r of fp.rows){
     html+=`<tr><td class="fp-l">${r.label}</td>`+
