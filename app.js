@@ -183,7 +183,7 @@ function renderNav(){
     dataZoom:[{type:"inside"},{type:"slider",height:16,bottom:8,borderColor:"#2a3450",backgroundColor:"#111726",fillerColor:"rgba(91,140,255,.15)",textStyle:{color:"#8b95b5"}}],
     series
   });
-  // 回撤
+  // 回撤（与净值图共用时间轴缩放，双向联动）
   const dd=(D.nav.drawdown||[]).map(x=>x*100);
   const c2=echarts.init($("ddChart"),null,{renderer:"canvas"});
   c2.setOption({
@@ -191,8 +191,15 @@ function renderNav(){
     xAxis:{type:"category",data:dates,axisLabel:{show:false},axisLine:{lineStyle:{color:"#2a3450"}}},
     yAxis:{type:"value",splitLine:{show:false},axisLabel:{color:"#8b95b5",formatter:"{value}%"}},
     tooltip:{trigger:"axis",backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"},valueFormatter:v=>v.toFixed(2)+"%"},
+    dataZoom:[{type:"inside",xAxisIndex:0},{type:"slider",show:false,xAxisIndex:0}],
     series:[{name:"回撤",type:"line",smooth:true,showSymbol:false,data:dd,lineStyle:{width:1,color:"#e05c5c"},areaStyle:{color:"rgba(224,92,92,.18)"}}]
   });
+  let _zsync=false;
+  const zsync=(from,to)=>{ if(_zsync) return; _zsync=true;
+    try{ const z=(from.getOption().dataZoom||[])[0]||{}; to.dispatchAction({type:"dataZoom",start:(z.start==null?0:z.start),end:(z.end==null?100:z.end)}); }
+    finally{ _zsync=false; } };
+  ch.on("datazoom",()=>zsync(ch,c2));
+  c2.on("datazoom",()=>zsync(c2,ch));
   window.addEventListener("resize",()=>{ch.resize();c2.resize();});
 }
 
