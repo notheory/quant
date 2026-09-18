@@ -97,3 +97,13 @@ a{color:var(--accent)}
 .fp td.rktd{text-align:right;white-space:nowrap}
 .fp .rk{display:inline-block}
 .fp .rk .q{margin-left:6px}
+.fp td.per{color:var(--mut);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.peers{margin-top:10px}
+.peers>summary{cursor:pointer;font-size:12px;color:var(--accent);list-style:none;padding:4px 0}
+.peers>summary::-webkit-details-marker{display:none}
+.peers>summary::before{content:"▸ "}
+.peers[open]>summary::before{content:"▾ "}
+.peers[open]>summary{margin-bottom:6px}
+.peersub{font-size:12px;color:var(--mut);margin:8px 0 4px;font-weight:600}
+.pfgrid{display:flex;flex-wrap:wrap;gap:6px}
+.pf{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;color:var(--txt)}
