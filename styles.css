@@ -94,3 +94,6 @@ a{color:var(--accent)}
 .q.tm{background:rgba(230,181,102,.16);color:var(--gold)}
 .q.tw{background:rgba(224,92,92,.16);color:#e05c5c}
 .qtag{font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-left:5px;vertical-align:middle}
+.fp td.rktd{text-align:right;white-space:nowrap}
+.fp .rk{display:inline-block}
+.fp .rk .q{margin-left:6px}
