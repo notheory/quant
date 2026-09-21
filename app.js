@@ -222,7 +222,7 @@ function renderFundPerf(){
   const ftxt=lg<=0?"同类·当日对齐":(lg===1?"同类·滞后1日(T+1)":("同类·滞后"+lg+"日·待夜间刷新"));
   const fresh=`<span class="fresh ${fcls}">${ftxt}</span>`;
   $("fpHint").innerHTML=`${fresh} 主锚 ${fp.anchor_name}(${fp.anchor_code})：整段年化超额 <b class="${cc(fp.ann_excess)}">${sp(fp.ann_excess)}</b>　信息比率 <b>${fp.info_ratio==null?"—":fp.info_ratio}</b>　同类池 主动${fp.n_active}/被动${fp.n_passive}　截至 ${fdate(fp.asof)}`+(lg>0?`<span style="color:var(--mut)">（组合净值当日 ${fdate(fp.curve_asof)} 已更新，同类净值以各基金最新披露为准）</span>`:"");
-  let html=`<tr><th>周期</th><th>起止</th><th>组合</th><th>${fp.anchor_name}</th><th>超额·全收益</th><th>主动同类·分位</th><th>被动同类·分位</th></tr>`;
+  let html=`<tr><th>周期</th><th>起止</th><th>组合</th><th>${fp.anchor_name}</th><th>超额·全收益</th><th>主动同类·分位</th><th>被动同类·分位</th><th>全部股票型·分位</th></tr>`;
   for(const r of fp.rows){
     html+=`<tr><td class="fp-l">${r.label}</td>`+
       `<td class="per">${md(r.start_date)}→${md(r.end_date)}</td>`+
@@ -230,7 +230,8 @@ function renderFundPerf(){
       `<td class="num">${sp(r.allincome)}</td>`+
       `<td class="num ${cc(r.ex_all)}">${sp(r.ex_all)}</td>`+
       `<td class="rktd">${cell(r.rank_active,r.n_active,r.pct_active,r.pure_live)}</td>`+
-      `<td class="rktd">${cell(r.rank_passive,r.n_passive,r.pct_passive,r.pure_live)}</td></tr>`;
+      `<td class="rktd">${cell(r.rank_passive,r.n_passive,r.pct_passive,r.pure_live)}</td>`+
+      `<td class="rktd">${cell(r.rank_all,r.n_all,r.pct_all,r.pure_live)}</td></tr>`;
   }
   $("fundPerf").innerHTML=html;
   const pp=fp.peers||{};
@@ -245,6 +246,7 @@ function renderFundPerf(){
   $("fpNote").innerHTML="口径：主锚＝中证红利全收益指数(H30269，含分红再投)，“超额·全收益”即红利增强的核心超额；“组合”列为费前真实涨幅。"
     +"同类排名为费后可比——分别按“主动红利池/被动红利池”各自费率中位数（"+([fa,fpa].filter(Boolean).join("、")||"—")+"）对组合扣费后，与同类公募复权净值同区间比较。"
     +"同类池＝业绩基准或名称含‘红利/股息’∩股票/混合型，剔除港股QDII·联接·FOF、A/C份额去重、成立≥1年、最新规模≥1亿。"
+    +"“全部股票型·分位”＝把组合放进<b>全市场所有股票型基金</b>（fund_type=股票型、A/C去重，当期可比约 "+(fp.uni_n||"—")+" 只）中排名，同区间、按较保守的主动权益费率 "+(fp.fee_all!=null?(fp.fee_all*100).toFixed(1)+"%":"—")+" 扣费后可比，用于看全市场站位。"
     +"近6月/1年/今年以来/起始以来 含 rqalpha 回测段（实盘自 "+fdate((D.meta&&D.meta.start_date)||"")+" 起）、回测无真实申赎与规模冲击、排名偏乐观，已标“含回测”；近1周/1月/3月为纯实盘。"
     +"样本为存续基金，有幸存者偏差；基金净值以各自最新披露为准（周更）。AI 生成，仅供参考，不构成投资建议。";
 }
