@@ -377,6 +377,25 @@ function renderExposure(){
     yAxis:{type:"category",data:fs.map(x=>x.name),axisLabel:{color:"#8b95b5",fontSize:11},axisLine:{lineStyle:{color:"#2a3450"}}},
     series:[{name:"组合",type:"bar",data:fs.map(x=>x.raw),itemStyle:{color:"#5b8cff"},barGap:0},
             {name:`主动(−${BN})`,type:"bar",data:fs.map(x=>x.active??null),itemStyle:{color:"#e05c5c"}}]});
+  const dl=e.daily;
+  if(dl){
+    $("expoDailyWrap").style.display="";
+    $("expoDailyAsof").textContent="　截至 "+fdate(dl.asof);
+    const pg=e.current_group||{};
+    const f2=x=>x==null?"—":(x>=0?"+":"")+x.toFixed(2);
+    $("expoDailyGroups").innerHTML=Object.keys(dl.group||{}).map(g=>{
+      const v=dl.group[g], p=pg[g], dlt=(v!=null&&p!=null)?(v-p):null;
+      const dc=dlt==null?"":(dlt>=0?"up":"down");
+      return `<span class="dchip"><b>${g}</b> <span class="${v>=0?'up':'down'}">${f2(v)}</span>`+
+             (dlt==null?"":`<i class="${dc}">Δ${dlt>=0?'+':''}${dlt.toFixed(2)}</i>`)+`</span>`;
+    }).join("");
+    const fr=(dl.factors||[]).filter(x=>x.active!=null).sort((a,b)=>Math.abs(b.active)-Math.abs(a.active));
+    let th="<tr><th>因子</th><th>类别</th><th>暴露</th><th>主动(−基准)</th></tr>";
+    const rows=fr.map(x=>`<tr><td style="text-align:left">${x.name}</td><td style="text-align:left;color:var(--mut)">${x.cat||""}</td>`+
+      `<td class="num ${x.raw>=0?'up':'down'}">${f2(x.raw)}</td>`+
+      `<td class="num ${x.active>=0?'up':'down'}">${f2(x.active)}</td></tr>`).join("");
+    $("expoDailyFactors").innerHTML=th+rows;
+  }
   window.addEventListener("resize",()=>{radar.resize();hist.resize();bars.resize();});
 }
 init();
