@@ -126,6 +126,7 @@ function renderNav(){
   const provStartIdx=stg.findIndex(s=>s==="provisional");
   const lsi=(D.meta&&D.meta.live_start_index)||0;
   const liveDate=D.nav.dates[lsi], firstDate=D.nav.dates[0], lastDate=D.nav.dates[D.nav.dates.length-1];
+  const _tot=(D.nav.dates||[]).length; const zStart=(_tot>1 && lsi>0)? Math.round(lsi/(_tot-1)*1000)/10 : 0;
   const areas=[], mlines=[];
   if(lsi>0){
     areas.push([{name:"回测",itemStyle:{color:"rgba(139,149,181,.10)"},label:{color:"#8b95b5",fontSize:11},
@@ -142,8 +143,8 @@ function renderNav(){
   if(mlines.length) series[0].markLine={silent:true,symbol:"none",data:mlines};
   const h=document.querySelector("#navHint");
   if(h){
-    let t=(lsi>0?"左侧灰底为 rqalpha 回测尾(按 "+fdate(liveDate)+" 归一对齐)；":"")+
-          (provStartIdx>=0?"绿线起为实盘，金虚线后为临时等权(待次月修正)。":"实盘为 rqalpha 真实成交·全收益。");
+    let t=(lsi>0?"默认展示实盘段("+fdate(liveDate)+"起)；向左拖动滑块可展开灰底 rqalpha 回测尾(按 "+fdate(liveDate)+" 归一对齐)。":"")+
+          (provStartIdx>=0?"金虚线后为临时等权(待次月修正)。":"实盘为 rqalpha 真实成交·全收益。");
     h.textContent=t;
   }
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
@@ -180,7 +181,7 @@ function renderNav(){
     grid:{left:48,right:20,top:30,bottom:50},
     xAxis:{type:"category",data:dates,axisLine:{lineStyle:{color:"#2a3450"}},axisLabel:{color:"#8b95b5"}},
     yAxis:{type:"value",scale:true,splitLine:{lineStyle:{color:"#212a44"}},axisLabel:{color:"#8b95b5"}},
-    dataZoom:[{type:"inside"},{type:"slider",height:16,bottom:8,borderColor:"#2a3450",backgroundColor:"#111726",fillerColor:"rgba(91,140,255,.15)",textStyle:{color:"#8b95b5"}}],
+    dataZoom:[{type:"inside",start:zStart,end:100},{type:"slider",start:zStart,end:100,height:16,bottom:8,borderColor:"#2a3450",backgroundColor:"#111726",fillerColor:"rgba(91,140,255,.15)",textStyle:{color:"#8b95b5"}}],
     series
   });
   // 回撤（与净值图共用时间轴缩放，双向联动）
@@ -191,7 +192,7 @@ function renderNav(){
     xAxis:{type:"category",data:dates,axisLabel:{show:false},axisLine:{lineStyle:{color:"#2a3450"}}},
     yAxis:{type:"value",splitLine:{show:false},axisLabel:{color:"#8b95b5",formatter:"{value}%"}},
     tooltip:{trigger:"axis",backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"},valueFormatter:v=>v.toFixed(2)+"%"},
-    dataZoom:[{type:"inside",xAxisIndex:0},{type:"slider",show:false,xAxisIndex:0}],
+    dataZoom:[{type:"inside",xAxisIndex:0,start:zStart,end:100},{type:"slider",show:false,xAxisIndex:0,start:zStart,end:100}],
     series:[{name:"回撤",type:"line",smooth:true,showSymbol:false,data:dd,lineStyle:{width:1,color:"#e05c5c"},areaStyle:{color:"rgba(224,92,92,.18)"}}]
   });
   let _zsync=false;
