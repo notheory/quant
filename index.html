@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大麦红利价值</title>
-<link rel="stylesheet" href="styles.css?v=2026-09-22-0023">
+<link rel="stylesheet" href="styles.css?v=2026-09-22-0041">
 <script src="echarts.min.js"></script>
-<script src="portfolio_data.js?v=2026-09-22-0023"></script>
+<script src="portfolio_data.js?v=2026-09-22-0041"></script>
 </head>
 <body>
 <header>
@@ -64,9 +64,14 @@
     <div><div id="expoHist" class="chart-md"></div></div>
   </div>
   <div id="expoBars" class="chart-lg" style="margin-top:8px"></div>
+  <div id="expoDailyWrap" style="display:none">
+    <div class="peersub">日频跟踪（当前持仓 × 今日因子截面，与上方“调仓期”月末快照对照）<span class="hint" id="expoDailyAsof"></span></div>
+    <div id="expoDailyGroups" class="dgrid"></div>
+    <table class="tbl fp" id="expoDailyFactors" style="margin-top:6px"></table>
+  </div>
 </section>
 
 <footer id="foot"></footer>
-<script src="app.js?v=2026-09-22-0023"></script>
+<script src="app.js?v=2026-09-22-0041"></script>
 </body>
 </html>
