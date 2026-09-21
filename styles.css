@@ -111,3 +111,9 @@ a{color:var(--accent)}
 .peersub{font-size:12px;color:var(--mut);margin:8px 0 4px;font-weight:600}
 .pfgrid{display:flex;flex-wrap:wrap;gap:6px}
 .pf{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;color:var(--txt)}
+.dgrid{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px}
+.dchip{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 10px;display:inline-flex;gap:6px;align-items:baseline}
+.dchip b{color:var(--txt)}
+.dchip .up{color:var(--up)}.dchip .down{color:var(--down)}
+.dchip i{font-style:normal;font-size:11px;color:var(--mut)}
+.dchip i.up{color:var(--up)}.dchip i.down{color:var(--down)}
