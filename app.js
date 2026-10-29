@@ -96,10 +96,11 @@ function renderSignal(){
   let html="";
   if(role==="select"){
     g.className="signal select";
-    const add=(si.pending?.added||[]), rm=(si.pending?.removed||[]);
+    const add=(si.pending?.added||[]), rm=(si.pending?.removed||[]), nm=(si.pending?.names||{});
+    const lbl=c=>((nm[c]?nm[c]+" ":"")+c);
     html=`<b>📌 选股日（${fdate(si.today)}）</b>：策略已产出新一期目标组合，等待 ${fdate(si.next_rebalance)} 收盘集中调仓。<br>`;
-    html+= add.length? add.map(c=>`<span class="chip add">调入 ${c}</span>`).join(""):"";
-    html+= rm.length? rm.map(c=>`<span class="chip del">调出 ${c}</span>`).join(""):"";
+    html+= add.length? add.map(c=>`<span class="chip add">调入 ${lbl(c)}</span>`).join(""):"";
+    html+= rm.length? rm.map(c=>`<span class="chip del">调出 ${lbl(c)}</span>`).join(""):"";
     if(!add.length&&!rm.length) html+="<span class='hint'>本期持仓无变化</span>";
   }else if(role==="rebalance"){
     g.className="signal rebalance";
