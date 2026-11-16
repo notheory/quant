@@ -10,7 +10,7 @@ function init(){
   const sa = m.backtest_start_asset? ("，倒推 "+fdate(m.period_start||"")+" 起始 ≈"+(m.backtest_start_asset/1e4).toFixed(2)+"万") : "";
   const bt = m.period_start? (" · 含 rqalpha 回测尾("+fdate(m.period_start)+"起"+sa+")") : "";
   $("subtitle").textContent = "· 净值以实盘首日 "+fdate(m.start_date||"")+" 总资产重定基 = 1.0000"+wan+bt+
-    " · 低频月末调仓 · 市值等权 · 全收益(含分红再投) · 年化/波动/夏普/回撤/超额按全区间口径";
+    " · 低频月末调仓 · 市值等权 · 全收益(含分红再投) · 年化/波动/夏普/回撤/超额随所选统计区间实时计算";
   const vn=$("valueNote");
   if(vn && m.initial_total){
     vn.textContent = "本金口径：以 0529 实盘首日总资产 "+(m.initial_total/1e4).toFixed(2)+" 万 = 净值 1.0000 为锚，"+
@@ -35,7 +35,8 @@ function init(){
     "rqalpha 已实现成交(等权/成本/停牌) 至 "+(rq.last?fdate(rq.last):"—")+
     (rq.covered?`，其后为临时市值等权、次月自动修正`:"")+
     " · 全收益(分红再投资) · 数据源 rqalpha + tushare。"+
-    "年化/波动/夏普/最大回撤/超额按整条展示区间(回测+实盘)计；最新净值/当日/累计收益以实盘(0529)为基。"+
+    "年化/波动/夏普/最大回撤/超额按上方所选统计区间实时计算(默认实盘以来，点‘全部(含回测)’即整条口径)；"+
+    "最新净值/当日/累计收益以实盘(0529)为基。"+
     " 本看板仅供业绩展示，不构成投资建议。";
 }
 
@@ -54,29 +55,140 @@ function renderHistory(){
   }).join("");
 }
 
+// ---------- 统计区间（KPI 随曲线所选区间即时重算）----------
+const TD = 244;                       // 年化交易日数，与后端 _interval_perf 口径一致
+const CH = {};                        // echarts 实例（净值图/回撤图，缩放联动）
+let WIN = {i0: 0, i1: 0, key: "live", custom: false};
+
+const PRESETS = [
+  {k:"all",  label:"全部(含回测)"},
+  {k:"live", label:"实盘以来"},
+  {k:"1y",   label:"近1年",  months:12},
+  {k:"6m",   label:"近6月",  months:6},
+  {k:"3m",   label:"近3月",  months:3},
+  {k:"1m",   label:"近1月",  months:1},
+];
+
+function dates(){ return (D.nav && D.nav.dates) || []; }
+
+function presetRange(p){
+  const ds = dates(), n = ds.length, lsi = (D.meta && D.meta.live_start_index) || 0;
+  if(!n) return [0, 0];
+  if(p.k === "all") return [0, n-1];
+  if(p.k === "live") return [Math.min(Math.max(lsi,0), n-1), n-1];
+  const last = String(ds[n-1]);
+  const d = new Date(+last.slice(0,4), +last.slice(4,6)-1, +last.slice(6,8));
+  d.setMonth(d.getMonth() - p.months);
+  const lo = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  let i0 = ds.findIndex(x => String(x) >= lo);
+  if(i0 < 0) i0 = Math.min(Math.max(lsi,0), n-1);
+  return [i0, n-1];
+}
+
+function winMetrics(i0, i1){
+  const navAll = (D.nav && D.nav.nav) || [], bm = D.benchmarks || {};
+  const lo = Math.max(0, Math.min(i0, i1)), hi = Math.min(navAll.length-1, Math.max(i0, i1));
+  const v = [], ix = [];
+  for(let i = lo; i <= hi; i++){ const x = navAll[i]; if(x != null && x === x){ v.push(x); ix.push(i); } }
+  if(v.length < 2) return null;
+  const rets = [];
+  for(let k = 1; k < v.length; k++) rets.push(v[k]/v[k-1] - 1);
+  const n = rets.length, tot = v[v.length-1]/v[0] - 1, yrs = n/TD;
+  const ann = yrs > 0 ? Math.pow(1+tot, 1/yrs) - 1 : 0;
+  const mean = rets.reduce((a,b)=>a+b, 0)/n;
+  const sd = n > 1 ? Math.sqrt(rets.reduce((a,b)=>a+(b-mean)*(b-mean), 0)/(n-1)) : 0;
+  const vol = sd*Math.sqrt(TD), sh = vol > 0 ? ann/vol : 0;
+  let peak = v[0], mdd = 0;
+  for(const x of v){ if(x > peak) peak = x; const dd = x/peak - 1; if(dd < mdd) mdd = dd; }
+  const ex = {}, exd = {};
+  for(const c in bm){
+    const arr = (bm[c] && bm[c].values) || [];
+    let f = null, l = null;
+    for(const i of ix){ const y = arr[i]; if(y != null && y === y){ if(f === null) f = y; l = y; } }
+    ex[c] = (f && l) ? (v[v.length-1]/v[0])/(l/f) - 1 : null;
+    const i1 = ix[ix.length-1], i0p = ix[ix.length-1]-1;
+    const a = navAll[i1], b = arr[i1], ap = navAll[i0p], bp = arr[i0p];
+    exd[c] = (a && b && ap && bp) ? ((a/b - 1) - (ap/bp - 1))*100 : null;
+  }
+  return {i0: lo, i1: hi, n: v.length, tot, ann, vol, sh, mdd, ex, exd,
+          start: dates()[lo], end: dates()[hi]};
+}
+
+function zoomRange(){
+  const ch = CH.nav; if(!ch) return [WIN.i0, WIN.i1];
+  const z = (ch.getOption().dataZoom || [])[0] || {}, n = dates().length;
+  let i0, i1;
+  if(typeof z.start === "number" && typeof z.end === "number"){
+    i0 = Math.round(z.start/100*(n-1)); i1 = Math.round(z.end/100*(n-1));
+  } else if(typeof z.startValue === "number" && typeof z.endValue === "number"){
+    i0 = z.startValue; i1 = z.endValue;
+  } else { i0 = 0; i1 = n-1; }
+  return [Math.max(0, Math.min(i0, n-1)), Math.max(0, Math.min(i1, n-1))];
+}
+
+let _lock = 0;                        // 刚点过预设按钮的时间戳：吸收 百分比↔索引 的取整误差
+function setWindow(i0, i1, key){
+  WIN = {i0, i1, key, custom:false}; _lock = Date.now();
+  [CH.nav, CH.dd].forEach(c => { if(c){ try{ c.dispatchAction({type:"dataZoom", startValue:i0, endValue:i1}); }catch(e){} } });
+  renderKPI(); renderRangeBar();
+}
+
+function onZoom(){
+  const [i0, i1] = zoomRange();
+  if(i0 === WIN.i0 && i1 === WIN.i1) return;
+  if(Date.now() - _lock < 500 && Math.abs(i0-WIN.i0) <= 3 && Math.abs(i1-WIN.i1) <= 3) return;
+  const hit = PRESETS.find(p => { const r = presetRange(p); return r[0] === i0 && r[1] === i1; });
+  WIN = {i0, i1, key: hit ? hit.k : "custom", custom: !hit};
+  renderKPI(); renderRangeBar();
+}
+
+function renderRangeBar(){
+  const bar = $("rngBtns"); if(!bar) return;
+  bar.innerHTML = PRESETS.map(p =>
+    `<button class="rbtn${WIN.key===p.k && !WIN.custom?" on":""}" data-k="${p.k}">${p.label}</button>`).join("")
+    + (WIN.custom ? `<button class="rbtn on" data-k="custom">自定义区间</button>` : "");
+  const ds = dates();
+  const info = $("rngInfo");
+  if(info){
+    const m = winMetrics(WIN.i0, WIN.i1);
+    info.textContent = m ? `统计区间 ${fdate(ds[m.i0])} ~ ${fdate(ds[m.i1])} · ${m.n} 个交易日` : "";
+  }
+  bar.querySelectorAll(".rbtn").forEach(b => b.onclick = () => {
+    const p = PRESETS.find(x => x.k === b.dataset.k); if(!p) return;
+    const [i0, i1] = presetRange(p); setWindow(i0, i1, p.k, false);
+  });
+}
+
 function renderKPI(){
-  const s=D.nav.nav||[], mt=D.metrics||{};
-  const last=s[s.length-1], prev=s[s.length-2];
-  const dayRet = prev? last/prev-1 : 0;
-  const since = last? last-1 : 0;
-  const bm=D.benchmarks||{};
-  const bEnd = c=>{const a=(bm[c]&&bm[c].values)||[];for(let i=a.length-1;i>=0;i--){if(a[i]!=null)return a[i];}return null;};
-  const exHS = (mt.ex_hs_full!=null)? mt.ex_hs_full : ((last&&bEnd("000922.CSI"))? last/bEnd("000922.CSI")-1 : null);
-  const ex300= (mt.ex_300_full!=null)? mt.ex_300_full : ((last&&bEnd("000300.SH"))? last/bEnd("000300.SH")-1 : null);
-  // [标签, 值, 涨跌色类, 环比值, 环比单位]
-  const cards=[
-    ["最新净值", last?last.toFixed(4):"—", ""],
+  const s = D.nav.nav || [], mt = D.metrics || {}, bm = D.benchmarks || {};
+  const last = s[s.length-1], prev = s[s.length-2];
+  const dayRet = prev ? last/prev-1 : 0;
+  const since = last ? last-1 : 0;
+  const m = winMetrics(WIN.i0, WIN.i1);
+  const mp = m && m.i1 > m.i0 ? winMetrics(WIN.i0, m.i1-1) : null;
+  const bcodes = Object.keys(bm);
+  const hsC = bcodes.find(c => bm[c] && bm[c].name && bm[c].name.indexOf("红利") >= 0) || "000922.CSI";
+  const c3C = bcodes.find(c => bm[c] && bm[c].name && bm[c].name.indexOf("300") >= 0) || "000300.SH";
+  const name = c => (bm[c] && bm[c].name) || c;
+  const ex = c => m && m.ex[c] != null ? m.ex[c] : null;
+  const exd = c => m && m.exd[c] != null ? m.exd[c] : null;
+  const vd = mp && m ? (m.vol - mp.vol)*100 : null;
+  const sd = mp && m ? m.sh - mp.sh : null;
+  // [标签, 值, 涨跌色类, 环比值, 环比单位]   —— 带 * 的卡片随上方所选统计区间变化
+  const cards = [
+    ["最新净值", last ? last.toFixed(4) : "—", ""],
     ["当日收益", pct(dayRet), cls(dayRet)],
     ["累计收益·实盘", pct(since), cls(since)],
-    ["全市场当日中位", mt.mkt_median==null?"—":((mt.mkt_median>=0?"+":"")+mt.mkt_median.toFixed(2)+"%"), cls(mt.mkt_median||0)],
-    ["年化收益", pct(mt.ann_return), cls(mt.ann_return||0)],
-    ["年化波动", pct(mt.ann_vol), "", mt.ann_vol_d, "pp"],
-    ["夏普比率", mt.sharpe!=null?mt.sharpe.toFixed(2):"—", (mt.sharpe||0)>=1?"up":"", mt.sharpe_d, ""],
-    ["最大回撤", pct(mt.max_drawdown), "down"],
-    ["区间超额·红利", exHS==null?"—":pct(exHS), cls(exHS||0), mt.ex_hs_d, "pp"],
-    ["区间超额·沪深300", ex300==null?"—":pct(ex300), cls(ex300||0), mt.ex_300_d, "pp"],
+    ["全市场当日中位", mt.mkt_median == null ? "—" : ((mt.mkt_median>=0?"+":"")+mt.mkt_median.toFixed(2)+"%"), cls(mt.mkt_median||0)],
+    ["区间收益*", m ? pct(m.tot) : "—", m ? cls(m.tot) : ""],
+    ["年化收益*", m ? pct(m.ann) : "—", m ? cls(m.ann) : ""],
+    ["年化波动*", m ? pct(m.vol) : "—", "", vd, "pp"],
+    ["夏普比率*", m ? m.sh.toFixed(2) : "—", (m && m.sh >= 1) ? "up" : "", sd, ""],
+    ["最大回撤*", m ? pct(m.mdd) : "—", "down"],
+    [`区间超额*·${name(hsC)}`, ex(hsC) == null ? "—" : pct(ex(hsC)), cls(ex(hsC)||0), exd(hsC), "pp"],
+    [`区间超额*·${name(c3C)}`, ex(c3C) == null ? "—" : pct(ex(c3C)), cls(ex(c3C)||0), exd(c3C), "pp"],
   ];
-  const dv=(d,u)=>{ if(d==null||isNaN(d)) return "";
+  const dv = (d,u)=>{ if(d==null||isNaN(d)) return "";
     const txt=(d>=0?"+":"")+d.toFixed(u==="pp"?2:3)+(u||""); const c=d>=0?"up":"down";
     return `<div class="kd ${c}">环比 ${d>=0?"▲":"▼"} ${txt}</div>`; };
   $("kpis").innerHTML = cards.map(c=>
@@ -144,11 +256,14 @@ function renderNav(){
   if(mlines.length) series[0].markLine={silent:true,symbol:"none",data:mlines};
   const h=document.querySelector("#navHint");
   if(h){
-    let t=(lsi>0?"默认展示实盘段("+fdate(liveDate)+"起)；向左拖动滑块可展开灰底 rqalpha 回测尾(按 "+fdate(liveDate)+" 归一对齐)。":"")+
-          (provStartIdx>=0?"金虚线后为临时等权(待次月修正)。":"实盘为 rqalpha 真实成交·全收益。");
+    let t=(lsi>0?"默认展示实盘段("+fdate(liveDate)+"起)，可点上方区间按钮或拖动滑块；灰底为 rqalpha 回测尾(按 "+fdate(liveDate)+" 归一对齐)。":"")+
+          (provStartIdx>=0?"金虚线后为临时等权(待次月修正)。":"实盘为 rqalpha 真实成交·全收益。")+
+          "年化/波动/夏普/回撤/超额随所选区间重算。";
     h.textContent=t;
   }
+  const _pw = presetRange({k:"live"});            // 默认统计区间=实盘以来（与曲线默认缩放同源）
   const ch=echarts.init($("navChart"),null,{renderer:"canvas"});
+  CH.nav=ch;
   const NAV=D.nav.nav||[];
   const PRIN=(D.meta&&D.meta.initial_total)||0;
   const bv={}; for(const c in (D.benchmarks||{})) bv[D.benchmarks[c].name]=D.benchmarks[c].values||[];
@@ -182,27 +297,36 @@ function renderNav(){
     grid:{left:48,right:20,top:30,bottom:50},
     xAxis:{type:"category",data:dates,axisLine:{lineStyle:{color:"#2a3450"}},axisLabel:{color:"#8b95b5"}},
     yAxis:{type:"value",scale:true,splitLine:{lineStyle:{color:"#212a44"}},axisLabel:{color:"#8b95b5"}},
-    dataZoom:[{type:"inside",start:zStart,end:100},{type:"slider",start:zStart,end:100,height:16,bottom:8,borderColor:"#2a3450",backgroundColor:"#111726",fillerColor:"rgba(91,140,255,.15)",textStyle:{color:"#8b95b5"}}],
+    dataZoom:[{type:"inside",startValue:_pw[0],endValue:_pw[1]},{type:"slider",startValue:_pw[0],endValue:_pw[1],height:16,bottom:8,borderColor:"#2a3450",backgroundColor:"#111726",fillerColor:"rgba(91,140,255,.15)",textStyle:{color:"#8b95b5"}}],
     series
   });
   // 回撤（与净值图共用时间轴缩放，双向联动）
   const dd=(D.nav.drawdown||[]).map(x=>x*100);
   const c2=echarts.init($("ddChart"),null,{renderer:"canvas"});
+  CH.dd=c2;
   c2.setOption({
     backgroundColor:"transparent",grid:{left:48,right:20,top:8,bottom:18},
     xAxis:{type:"category",data:dates,axisLabel:{show:false},axisLine:{lineStyle:{color:"#2a3450"}}},
     yAxis:{type:"value",splitLine:{show:false},axisLabel:{color:"#8b95b5",formatter:"{value}%"}},
     tooltip:{trigger:"axis",backgroundColor:"#1c2438",borderColor:"#2a3450",textStyle:{color:"#e6eaf5"},valueFormatter:v=>v.toFixed(2)+"%"},
-    dataZoom:[{type:"inside",xAxisIndex:0,start:zStart,end:100},{type:"slider",show:false,xAxisIndex:0,start:zStart,end:100}],
+    dataZoom:[{type:"inside",xAxisIndex:0,startValue:_pw[0],endValue:_pw[1]},{type:"slider",show:false,xAxisIndex:0,startValue:_pw[0],endValue:_pw[1]}],
     series:[{name:"回撤",type:"line",smooth:true,showSymbol:false,data:dd,lineStyle:{width:1,color:"#e05c5c"},areaStyle:{color:"rgba(224,92,92,.18)"}}]
   });
   let _zsync=false;
   const zsync=(from,to)=>{ if(_zsync) return; _zsync=true;
-    try{ const z=(from.getOption().dataZoom||[])[0]||{}; to.dispatchAction({type:"dataZoom",start:(z.start==null?0:z.start),end:(z.end==null?100:z.end)}); }
-    finally{ _zsync=false; } };
-  ch.on("datazoom",()=>zsync(ch,c2));
-  c2.on("datazoom",()=>zsync(c2,ch));
+    try{ const z=(from.getOption().dataZoom||[])[0]||{};
+      if(typeof z.start === "number" && typeof z.end === "number")
+        to.dispatchAction({type:"dataZoom", start:z.start, end:z.end});
+      else if(typeof z.startValue === "number" && typeof z.endValue === "number")
+        to.dispatchAction({type:"dataZoom", startValue:z.startValue, endValue:z.endValue});
+    } finally{ _zsync=false; } };
+  ch.on("datazoom",()=>{ zsync(ch,c2); onZoom(); });
+  c2.on("datazoom",()=>{ zsync(c2,ch); onZoom(); });
   window.addEventListener("resize",()=>{ch.resize();c2.resize();});
+  // 初始统计区间 = 实盘以来（与曲线默认缩放同源），KPI 随之呈现
+  const _p0 = presetRange({k:"live"});
+  WIN = {i0:_p0[0], i1:_p0[1], key:"live", custom:false};
+  renderKPI(); renderRangeBar();
 }
 
 function renderFundPerf(){
