@@ -19,7 +19,14 @@ h1{margin:0;font-size:20px;letter-spacing:.5px}
 .chip{display:inline-block;padding:2px 8px;border-radius:6px;margin:2px 4px 2px 0;font-size:12px}
 .chip.add{background:rgba(224,92,92,.15);color:var(--up)}
 .chip.del{background:rgba(62,207,142,.15);color:var(--down)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:16px 28px 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:10px 28px 0}
+.rngbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 28px 0}
+.rngbar .rl{color:var(--mut);font-size:12px}
+.rbtns{display:flex;flex-wrap:wrap;gap:6px}
+.rbtn{cursor:pointer;font:inherit;font-size:12px;color:var(--mut);background:var(--panel);
+  border:1px solid var(--line);border-radius:20px;padding:3px 12px}
+.rbtn:hover{color:var(--txt);border-color:var(--accent)}
+.rbtn.on{color:#fff;background:rgba(91,140,255,.22);border-color:var(--accent)}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
 .kpi .k{color:var(--mut);font-size:12px}
 .kpi .v{font-size:21px;font-weight:600;margin-top:6px}
