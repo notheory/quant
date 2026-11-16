@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大麦红利价值</title>
-<link rel="stylesheet" href="styles.css?v=2026-11-16-2206">
+<link rel="stylesheet" href="styles.css?v=2026-11-16-2324">
 <script src="echarts.min.js"></script>
-<script src="portfolio_data.js?v=2026-11-16-2206"></script>
+<script src="portfolio_data.js?v=2026-11-16-2324"></script>
 </head>
 <body>
 <header>
@@ -19,6 +19,11 @@
 
 <div id="signal" class="signal"></div>
 
+<div class="rngbar">
+  <span class="rl">统计区间</span>
+  <div class="rbtns" id="rngBtns"></div>
+  <span class="hint" id="rngInfo"></span>
+</div>
 <section class="kpis" id="kpis"></section>
 <div id="valueNote" class="hint" style="margin:2px 4px 10px;color:#8b95b5;font-size:12px;line-height:1.55"></div>
 
@@ -47,7 +52,7 @@
 </div>
 
 <section class="card" id="eventsCard" style="display:none">
-  <div class="card-head"><h2>近期重要事项</h2><span class="hint" id="eventsHint">当前持仓近3月已发生 / 未来1月将至：分红、业绩预告·快报·披露</span></div>
+  <div class="card-head"><h2>近期重要事项</h2><span class="hint" id="eventsHint">只列“当时/届时确实持有”的个股：近3月已发生 + 未来1月将至（分红、业绩预告·快报·披露）。9月末及以前=rqalpha 真实成交持仓，10月起=v23 月度篮子等权模型；已调出的个股不再出现其股息</span></div>
   <div id="eventsBox" class="evts"></div>
 </section>
 
@@ -72,6 +77,6 @@
 </section>
 
 <footer id="foot"></footer>
-<script src="app.js?v=2026-11-16-2206"></script>
+<script src="app.js?v=2026-11-16-2324"></script>
 </body>
 </html>
